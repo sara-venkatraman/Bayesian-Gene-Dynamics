@@ -16,17 +16,19 @@ stringDBMatrix <- read.csv("../Drosophila Data (Processed)/Dme_STRING_matrix.csv
 # Entry (i,j) of the prior matrix is 1 if genes i, j have a similarity score above 500 and
 # is 0 otherwise. Entry (i,j) = 0 also if gene i and/or j was not included in STRING-DB.
 # Matrix is formatted according to requirements in EmpiricalBayesFunctions.R.
-priorMatrix <- matrix(rep(0, subsetSize^2), nrow=subsetSize, ncol=subsetSize)
-rownames(priorMatrix) <- genesSubset;  colnames(priorMatrix) <- genesSubset
+stringMatrixSubset <- matrix(rep(0, subsetSize^2), nrow=subsetSize, ncol=subsetSize)
+rownames(stringMatrixSubset) <- genesSubset;  colnames(stringMatrixSubset) <- genesSubset
 for(i in 1:subsetSize) {
   for(j in i:subsetSize) {
     STRINGscore <- stringDBMatrix[Gene.Name.To.Flybase.ID(genesSubset[i]), Gene.Name.To.Flybase.ID(genesSubset[j])]
     if(!is.na(STRINGscore) && !is.null(STRINGscore)) { 
-      priorMatrix[i,j] <- (STRINGscore >= 500) 
-      priorMatrix[j,i] <- priorMatrix[i,j]
+      stringMatrixSubset[i,j] <- STRINGscore 
+      stringMatrixSubset[j,i] <- stringMatrixSubset[i,j]
     }
   }
 }
+
+priorMatrix <- (stringMatrixSubset >= 500) + 0
 
 # Print the number of 0's and 1's in the binary prior matrix
 table(priorMatrix)
