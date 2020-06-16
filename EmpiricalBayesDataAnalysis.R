@@ -322,7 +322,101 @@ for(i in 1:length(gVec)) { objVec[i] <- objective(gVec[i]) }
 plot(gVec, objVec, type="o")
 objVec
 
-# To do next: use the optimal g for every pairwise comparison and re-do the scatterplot. Ideally, there should be greater
-# separation between models 2 and 3.
+# Low STRING score but similar time profiles
+par(mfrow=c(2,3), mai=c(.57,.55,.57,.55))
+Plot.Gene.Pair("Pgm","CG34331") # include
+stringDBMatrix[Gene.Name.To.Flybase.ID("Pgm"), Gene.Name.To.Flybase.ID("CG34331")] # score: NA
 
+Plot.Gene.Pair("CG6543","Nipsnap") #include
+stringDBMatrix[Gene.Name.To.Flybase.ID("CG6543"), Gene.Name.To.Flybase.ID("Nipsnap")] # score: 151
+
+Plot.Gene.Pair("Nipsnap","CG1907") # include
+stringMatrixSubset["Nipsnap","CG1907"] # score: 154
+
+Plot.Gene.Pair("CG6543","CG1907") # include
+stringDBMatrix[Gene.Name.To.Flybase.ID("CG6543"), Gene.Name.To.Flybase.ID("CG1907")] # score: 354
+
+Plot.Gene.Pair("CG1907", "lic") # include
+stringDBMatrix[Gene.Name.To.Flybase.ID("lic"), Gene.Name.To.Flybase.ID("CG1907")] # score: NA
+
+Plot.Gene.Pair("ORMDL", "Mdh1")  # include
+stringDBMatrix[Gene.Name.To.Flybase.ID("ORMDL"), Gene.Name.To.Flybase.ID("Mdh1")] # score: NA
+par(mfrow=c(1,1), mar=c(1,1,1,1))
+
+Plot.Gene.Pair("CG6543","Ctr1B")
+stringDBMatrix[Gene.Name.To.Flybase.ID("CG6543"), Gene.Name.To.Flybase.ID("Ctr1B")] # score: NA
+
+Plot.Gene.Pair("CG6543","CG4594")
+stringDBMatrix[Gene.Name.To.Flybase.ID("CG6543"), Gene.Name.To.Flybase.ID("CG4594")] # score: 429
+
+Plot.Gene.Pair("Nipsnap", "lic")
+stringDBMatrix[Gene.Name.To.Flybase.ID("Nipsnap"), Gene.Name.To.Flybase.ID("lic")] # score: NA
+
+# Group some of the above genes
+Plot.Gene.Group(c("CG6543","CG4594","Ctr1B"))
+Plot.Gene.Group(c("Pgm","CG34331","CG6543","Nipsnap","CG1907","ORMDL","Mdh1"))
+Plot.Gene.Group(c("Pgm","CG6543","CG4594","Ctr1B", "CG34331", "CG6503", "Nipsnap", "Nplp2"))
+stringMatrixSubset[c("Pgm","CG6543","CG4594","Ctr1B", "CG34331", "CG6503", "Nipsnap", "Nplp2"), c("Pgm","CG6543","CG4594","Ctr1B", "CG34331", "CG6503", "Nipsnap", "Nplp2")]
+stringDBMatrix[Gene.Name.To.Flybase.ID(c("Pgm","CG34331","CG6543","Nipsnap","CG1907","ORMDL","Mdh1")),  Gene.Name.To.Flybase.ID(c("Pgm","CG34331","CG6543","Nipsnap","CG1907","ORMDL","Mdh1"))]
+
+# High STRING score but different time profiles
+par(mfrow=c(3,3), mai=c(.6,.55,.4,.5))
+Plot.Gene.Pair("CG11459","Gal")
+stringDBMatrix[Gene.Name.To.Flybase.ID("CG11459"), Gene.Name.To.Flybase.ID("Gal")] # score: 901
+
+Plot.Gene.Pair("Tpi","Eip71CD")
+stringDBMatrix[Gene.Name.To.Flybase.ID("Tpi"), Gene.Name.To.Flybase.ID("Eip71CD")] # score: 550
+
+Plot.Gene.Pair("Jon25Biii","Jon65Aii")
+stringDBMatrix[Gene.Name.To.Flybase.ID("Jon25Biii"), Gene.Name.To.Flybase.ID("Jon65Aii")] # score: 914
+
+Plot.Gene.Pair("CG8837","ninaD")
+stringDBMatrix[Gene.Name.To.Flybase.ID("ninaD"), Gene.Name.To.Flybase.ID("CG8837")] # score: 900
+
+Plot.Gene.Pair("Got1","ImpL3") # Fold-change is small
+stringDBMatrix[Gene.Name.To.Flybase.ID("Got1"), Gene.Name.To.Flybase.ID("ImpL3")] # score: 975
+
+Plot.Gene.Pair("PyK","ImpL3") # Fold-change is small
+stringDBMatrix[Gene.Name.To.Flybase.ID("PyK"), Gene.Name.To.Flybase.ID("ImpL3")] # score: 943
+
+Plot.Gene.Pair("NimB3","NimC2")
+stringDBMatrix[Gene.Name.To.Flybase.ID("NimB3"), Gene.Name.To.Flybase.ID("NimC2")] # score: 559
+
+Plot.Gene.Pair("NimB3","NimB4")
+stringDBMatrix[Gene.Name.To.Flybase.ID("NimB3"), Gene.Name.To.Flybase.ID("NimB4")] # score: 680
+
+Plot.Gene.Pair("Pgm","PGRP-SD")
+stringDBMatrix[Gene.Name.To.Flybase.ID("Pgm"), Gene.Name.To.Flybase.ID("PGRP-SD")] # score: 900
+par(mfrow=c(1,1))
+
+
+Plot.Gene.Pair("Tpi","Hsp70Ba") # Fold-change is small for Tpi
+stringDBMatrix[Gene.Name.To.Flybase.ID("Tpi"), Gene.Name.To.Flybase.ID("Hsp70Ba")] # score: 513
+
+Plot.Gene.Pair("CG11459", "PGRP-SD")
+stringDBMatrix[Gene.Name.To.Flybase.ID("CG11459"), Gene.Name.To.Flybase.ID("PGRP-SD")] # score: 513
+
+Plot.Gene.Pair("CG11459", "CtsB1")
+stringDBMatrix[Gene.Name.To.Flybase.ID("CG11459"), Gene.Name.To.Flybase.ID("CtsB1")] # score: 513
+
+Plot.Gene.Group(c("CG11459","PGRP-SD","CtsB1","Rel", "p38c")) # Aggregate some previous examples
+Plot.Gene.Group(c("NimB3","NimB4","NimC2")) # Aggregate some previous examples
+stringMatrixSubset[c("NimB3","NimB4","NimC2"), c("NimB3","NimB4","NimC2")]
+Plot.Gene.Group(c("Got1","Mdh1","r","CG1640","ImpL3")) # Aggregate some previous examples
+Plot.Gene.Group(c("CG11459","p38c","PGRP-SD","CtsB1","Rel")) # Aggregate some previous examples
+Plot.Gene.Group(c("NimB4","CG31205","NimB3","CG1092","CG34331"))
+Plot.Gene.Group(c("NimC2","NimB3","CG10659","CG12057","CG11893"))
+
+# Cyclical patterns
+Plot.Gene.Pair("CG5999","CG6910")
+stringDBMatrix[Gene.Name.To.Flybase.ID("CG5999"), Gene.Name.To.Flybase.ID("CG6910")] # score: 653
+
+Plot.Gene.Pair("CG6296","CG7025")
+stringMatrixSubset["CG6296","CG7025"] # score: 583
+
+Plot.Gene.Pair("CG6543","CG10131")
+stringMatrixSubset["CG6543","CG10131"] # score: 965
+
+Plot.Gene.Pair("mino","CG1946")
+stringMatrixSubset["mino","CG1946"] # score: 714
 
