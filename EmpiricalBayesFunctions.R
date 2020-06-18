@@ -54,23 +54,25 @@ Plot.Gene.Pair <- function(gene1, gene2) {
 }
 
 # Plot the expression profiles (observed points and spline interpolants)
-# of multiple genes
-library(RColorBrewer)#library(wesanderson)
+# of up to 16 genes
+library(RColorBrewer)
 Plot.Gene.Group <- function(genesToPlot) {
-  plotColors <- brewer.pal(n=length(genesToPlot), name="Dark2") #wes_palette(name="FantasticFox1", n=length(genesToPlot))
-  plotTitle <- paste(genesToPlot, collapse=", ")
+  plotColors <- c(brewer.pal(n=8, name="Dark2"), brewer.pal(n=8, name="Set2"))[1:length(genesToPlot)]
+  plotTitle <- strwrap(paste(genesToPlot, collapse=", "))
   plotExtrema <- Time.Profile.Extrema(genesToPlot)
+  par(xpd=TRUE, mar = par()$mar + c(0,0,0,3))
   interp <- Expression.Profile.Interpolant(genesToPlot[1])
   profile <- geneData[genesToPlot[1],]
-  curve(interp, from=0, to=48, col=plotColors[1], main=plotTitle, xlab="Time", ylab="Expression (log-fold change)", ylim=c(plotExtrema$min, plotExtrema$max), lwd=1.5)
+  curve(interp, from=0, to=48, col=plotColors[1], main=plotTitle, xlab="Time", ylab="Expression (log-fold)", ylim=c(plotExtrema$min, plotExtrema$max), lwd=1.5)
   points(hours, profile, pch=20, col=plotColors[1])
   for(i in 2:length(genesToPlot)) {
     interp <- Expression.Profile.Interpolant(genesToPlot[i])
     profile <- geneData[genesToPlot[i],]
-    curve(interp, from=0, to=48, col=plotColors[i], add=T, xlab="Time", ylab="Expression (log-fold change)", lwd=1.5)
+    curve(interp, from=0, to=48, col=plotColors[i], add=T, xlab="Time", ylab="Expression (log-fold)", lwd=1.5)
     points(hours, profile, pch=20, col=plotColors[i])
   }
-  legend("bottomright", legend=genesToPlot, col=plotColors, fill=plotColors, horiz=TRUE, cex=0.6) 
+  legend("topright", legend=genesToPlot, col=plotColors, fill=plotColors, cex=0.6, xpd=TRUE, inset=c(-.25,0)) 
+  par(xpd=FALSE, mar = par()$mar-c(0,0,0,3))
 }
 
 # For plotting purposes only: returns the largest and smallest expression
