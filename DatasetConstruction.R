@@ -44,3 +44,20 @@ stringDBMatrix <- spread(stringDB, FBgn_item_id_b, combined_score)
 rownames(stringDBMatrix) <- stringDBMatrix$FBgn_item_id_a
 stringDBMatrix <- stringDBMatrix[,-1]
 write.csv(stringDBMatrix, file="Dme_STRING_matrix.csv")
+
+# ------------------------------------------------------------------
+
+# Create CSV dataset of *experimental* STRING-DB scores in the form of a 
+# similarity matrix (no need to run if Dme_STRING_exp_matrix.csv already exists)
+
+# Read STRING-DB data and remove all columns but the gene names and experimental scores
+stringDBexp <- read.table("../Drosophila Data (Processed)/Dme_STRING_individual_scores.txt", header=T)
+stringDBexp <- stringDBexp[,c("gene1","gene2","experimental")]
+stringDBexp <- stringDBexp[complete.cases(stringDBexp),]
+
+# Reshape the STRING-DB into a matrix with one row per Flybase ID (gene1)
+library(tidyr)
+stringDBMatrix <- spread(stringDBexp, gene2, experimental)
+rownames(stringDBMatrix) <- stringDBMatrix$gene1
+stringDBMatrix <- stringDBMatrix[,-1]
+write.csv(stringDBMatrix, file="Dme_STRING_exp_matrix.csv")
