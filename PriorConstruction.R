@@ -6,7 +6,7 @@ source("DatasetLoader.R")
 # Load functions in EmpiricalBayesFunctions.R
 source("EmpiricalBayesFunctions.R")
 
-# --- Construct prior matrix from STRING-DB scores ---
+# --- Construct prior matrix from full STRING-DB scores ---
 
 # Read STRING-DB similarity matrix
 stringDBMatrix <- read.csv("../Drosophila Data (Processed)/Dme_STRING_matrix.csv", header=T, row.names=1)
@@ -29,6 +29,33 @@ for(i in 1:subsetSize) {
 }
 
 priorMatrix <- (stringMatrixSubset >= 500) + 0
+
+# Print the number of 0's and 1's in the binary prior matrix
+table(priorMatrix)
+
+# --- Construct prior matrix from experimental STRING-DB scores ---
+
+# Read STRING-DB similarity matrix
+stringDBMatrix <- read.csv("../Drosophila Data (Processed)/Dme_STRING_exp_matrix.csv", header=T, row.names=1)
+
+# Construct a prior similarity matrix (binary) for a subset of DE genes using STRING-DB.
+# For now, treat NAs in the STRING-DB matrix as either unknown or non-similar.
+# Entry (i,j) of the prior matrix is 1 if genes i, j have a similarity score above 500 and
+# is 0 otherwise. Entry (i,j) = 0 also if gene i and/or j was not included in STRING-DB.
+# Matrix is formatted according to requirements in EmpiricalBayesFunctions.R.
+stringMatrixSubset <- matrix(rep(0, subsetSize^2), nrow=subsetSize, ncol=subsetSize)
+rownames(stringMatrixSubset) <- genesSubset;  colnames(stringMatrixSubset) <- genesSubset
+for(i in 1:subsetSize) {
+  for(j in i:subsetSize) {
+    STRINGscore <- stringDBMatrix[Gene.Name.To.Flybase.ID(genesSubset[i]), Gene.Name.To.Flybase.ID(genesSubset[j])]
+    if(!is.na(STRINGscore) && !is.null(STRINGscore)) { 
+      stringMatrixSubset[i,j] <- STRINGscore 
+      stringMatrixSubset[j,i] <- stringMatrixSubset[i,j]
+    }
+  }
+}
+
+priorMatrix <- (stringMatrixSubset >= 100) + 0
 
 # Print the number of 0's and 1's in the binary prior matrix
 table(priorMatrix)
