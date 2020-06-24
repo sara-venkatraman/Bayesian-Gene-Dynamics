@@ -18,11 +18,12 @@ Draw.Metric.Scatterplot.For.Binary.Prior(bayesR2Matrices, bayes=TRUE)
 
 # --- Hierarchical clustering using empirical Bayes R^2 ---
 
-hierClust <- hclust(as.dist(1-nonBayesR2Matrices$matrix2), method="ward.D")
-clusters <- cutree(hierClust, k=15)
+avgSimMatrix <- (bayesR2Matrices$matrix1 + (bayesR2Matrices$matrix2-bayesR2Matrices$matrix3))/2
+hierClust <- hclust(as.dist(1-avgSimMatrix), method="ward.D")
+clusters <- cutree(hierClust, k=20)
 table(clusters)
-plot(hierClust, cex=0.3);  rect.hclust(hierClust, k=15, border="red")
-Plot.Gene.Group((genesSubset[clusters == 9]))
+plot(hierClust, cex=0.3);  rect.hclust(hierClust, k=20, border="red")
+Plot.Gene.Group((genesSubset[clusters == 20]))
 
 # --- Analysis on simulated data: matrices/vectors formatted as required by EmpiricalBayesFunctions.R
 #     How to use this code: first run one of the following lines, then run all the code in the subsequent part ---
@@ -46,10 +47,10 @@ Plot.Gene.Pair("gene1","gene2"); Compute.Gene.Pair.R2("gene1","gene2"); Compute.
 # How many gene pairs are in each quadrant of the plot, and what do the pair plots look like for those in the upper-right quadrant?
 bayesR2MatricesVec <- Vectorize.R2.Matrices(genesSubset, bayesR2Matrices)
 bayesVec1 <- bayesR2MatricesVec$vector1;  bayesVec2 <- bayesR2MatricesVec$vector2;  bayesVec3 <- bayesR2MatricesVec$vector3
-upperRight <- rownames(bayesVec1)[bayesVec1 > 0.7 & bayesVec2-bayesVec3 > 0.4]
-lowerRight <- rownames(bayesVec1)[bayesVec1 > 0.7 & bayesVec2-bayesVec3 <= 0.4] 
-lowerLeft <- rownames(bayesVec1)[bayesVec1 <= 0.7 & bayesVec2-bayesVec3 <= 0.4] 
-upperLeft <- rownames(bayesVec1)[bayesVec1 <= 0.7 & bayesVec2-bayesVec3 > 0.4]  # upper-left quadrant - interesting patterns here, but not always close
+upperRight <- rownames(bayesVec1)[bayesVec1 > 0.5 & bayesVec2-bayesVec3 > 0.2]
+lowerRight <- rownames(bayesVec1)[bayesVec1 > 0.5 & bayesVec2-bayesVec3 <= 0.2] 
+lowerLeft <- rownames(bayesVec1)[bayesVec1 <= 0.5 & bayesVec2-bayesVec3 <= 0.2] 
+upperLeft <- rownames(bayesVec1)[bayesVec1 <= 0.5 & bayesVec2-bayesVec3 > 0.2]  # upper-left quadrant - interesting patterns here, but not always close
 lapply(list(upperRight, lowerRight, lowerLeft, upperLeft), function(x) { return(length(x)/length(bayesVec1)) }) # Print the above in proportions
 
 # Plot all the gene pairs that are in the upper-right quadrant
@@ -207,3 +208,14 @@ stringMatrixSubset[c("NimB3","NimB4","NimC2"), c("NimB3","NimB4","NimC2")]
 Plot.Gene.Pair("CG5999","CG6910")
 Plot.Gene.Group(c("IM14","IM1","IM2","CG5791", "Drs"))
 stringDBMatrix[Gene.Name.To.Flybase.ID("CG5999"), Gene.Name.To.Flybase.ID("CG6910")] # score: 653
+
+# --- Fuzzy clustering ---
+
+# Prepare dataset for use with MFuzz package
+library(Mfuzz)
+geneDataMFuzz <- table2eset("../Processed Data for Clustering/DElogChange_MFuzz.txt")
+mClustering <- mestimate(geneDataMFuzz)
+mFuzzClust <- mfuzz(geneDataMFuzz, c=16, m=mClustering)
+mfuzz.plot(geneDataMFuzz, cl=mFuzzClust, mfrow=c(4,4), time.labels=hours, new.window=F)
+
+

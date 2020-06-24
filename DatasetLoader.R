@@ -14,5 +14,5 @@ geneNames <- as.character(geneNames$geneName)
 geneIDs <- as.character(geneIDs$geneID)
 
 # Define a subset of genes on which to run the R^2 analysis
-subsetSize <- 150
+subsetSize <- 250
 genesSubset <- sample(geneNames, size=subsetSize)

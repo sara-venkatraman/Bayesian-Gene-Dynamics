@@ -46,7 +46,7 @@ Plot.Gene.Pair <- function(gene1, gene2) {
   profile2 <- geneData[gene2,]
   ylim1 <- min(min(profile1), min(profile2))
   ylim2 <- max(max(profile1), max(profile2))
-  curve(interp1, from=0, to=45, col="red", main=paste(gene1, ", ", gene2, sep=""), xlab="Time", ylab="Expression (log-fold change)", ylim=c(ylim1, ylim2), lwd=1.5)
+  curve(interp1, from=0, to=45, col="red", main=paste(gene1, ", ", gene2, sep=""), xlab="Time", ylab="Expression (log-fold)", ylim=c(ylim1, ylim2), lwd=1.5)
   curve(interp2, from=0, to=45, col="blue", lwd=1.5, add=T)
   points(hours, profile1, pch=20, col="red")
   points(hours, profile2, pch=20, col="blue")
