@@ -209,13 +209,84 @@ Plot.Gene.Pair("CG5999","CG6910")
 Plot.Gene.Group(c("IM14","IM1","IM2","CG5791", "Drs"))
 stringDBMatrix[Gene.Name.To.Flybase.ID("CG5999"), Gene.Name.To.Flybase.ID("CG6910")] # score: 653
 
-# --- Fuzzy clustering ---
+# --- Soft clustering with MFuzz package ---
 
-# Prepare dataset for use with MFuzz package
 library(Mfuzz)
 geneDataMFuzz <- table2eset("../Processed Data for Clustering/DElogChange_MFuzz.txt")
 mClustering <- mestimate(geneDataMFuzz)
 mFuzzClust <- mfuzz(geneDataMFuzz, c=16, m=mClustering)
 mfuzz.plot(geneDataMFuzz, cl=mFuzzClust, mfrow=c(4,4), time.labels=hours, new.window=F)
+
+# --- Soft clustering with lead-lag R^2 ---
+
+library(fclust)
+
+# Save components of output from R^2 computations
+bayesR2MatricesVec <- Vectorize.R2.Matrices(genesSubset, bayesR2Matrices)
+bayesMat1 <- bayesR2Matrices$matrix1; bayesMat2 <- bayesR2Matrices$matrix2; bayesMat3 <- bayesR2Matrices$matrix3
+bayesVec1 <- bayesR2MatricesVec$vector1;  bayesVec2 <- bayesR2MatricesVec$vector2;  bayesVec3 <- bayesR2MatricesVec$vector3
+
+# Extract names of gene pairs falling in upper-right area of scatterplot
+upperRight <- rownames(bayesVec1)[bayesVec1 > 0.4 & bayesVec2-bayesVec3 > 0.2]
+upperRightGeneNames <- unique(strsplit(paste(upperRight, collapse=", "), ", ")[[1]])
+
+# Extract subsets of similarity matrices corresponding to genes in 'upperRight'
+bayesMatrix1Subset <- bayesMat1[upperRightGeneNames, upperRightGeneNames]
+bayesMatrix2Subset <- bayesMat2[upperRightGeneNames, upperRightGeneNames]
+bayesMatrix3Subset <- bayesMat3[upperRightGeneNames, upperRightGeneNames]
+
+# Run soft clustering method and extract/view the weight matrix of cluster membership scores
+dissimilarityMatrix <- 1 - bayesMatrix2Subset
+numClusters <- 15
+softClustering <- Fclust(X=as.dist(dissimilarityMatrix), k=numClusters, type="standard", ent=FALSE, noise=FALSE, stand=0, distance=TRUE)
+weightMatrix <- softClustering$U
+# View(weightMatrix)
+
+# Plot individual clusters
+clusterIndex <- 1
+table(softClustering$U[,clusterIndex] > (1/numClusters + 1e-7) + 0)
+genesInCluster <- rownames(weightMatrix)[weightMatrix[,clusterIndex] > (1/numClusters + 1e-7)]
+Plot.Gene.Group(genesInCluster)
+
+# Plot clusters in a PDF
+pdf("GeneClusters.pdf", height=7, width=12)
+par(mfrow=c(2,2), mai=c(0.8,1.1,0.8,1.1))
+for(i in seq(1, numClusters)) {
+  tol <- 0.00000018
+  if(sum(softClustering$U[,i] > (1/numClusters + tol) + 0) > 2) {
+    genesInCluster <- rownames(weightMatrix)[weightMatrix[,i] > (1/numClusters + tol)]
+    Plot.Gene.Group(genesInCluster)
+  }
+}
+dev.off(); par(mfrow=c(1,1))
+
+# --- Soft clustering implementation (to be continued) ---
+
+# # Initialize weight matrix: a gene falls uniformly in any one of the clusters
+# numClusters <- 16
+# weightMatrixOld <- matrix(rep(1/numClusters, subsetSize*numClusters), nrow=subsetSize, ncol=numClusters)
+# rownames(weightMatrixOld) <- genesSubset
+# 
+# # Initialize matrix of centroids
+# centroids <- matrix(0, nrow=numClusters, ncol=length(hours))
+# 
+# # Optimization
+# iterations <- 0;  continue <- TRUE
+# while(continue) {
+#   # Update centroids
+#   for(j in 1:numClusters) {
+#     
+#   }
+#   # Update weights
+#   
+#   # Check convergence
+#   iterations <- iterations + 1
+#   if(iterations > 100 && norm(weightMatrixNew - weightMatrixOld, "F") > 0.3) {
+#     continue <- FALSE
+#   }
+# }
+
+
+
 
 
