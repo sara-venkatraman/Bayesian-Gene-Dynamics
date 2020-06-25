@@ -60,7 +60,7 @@ Plot.Gene.Group <- function(genesToPlot) {
   plotColors <- c(brewer.pal(n=8, name="Dark2"), brewer.pal(n=8, name="Set2"))[1:length(genesToPlot)]
   plotTitle <- strwrap(paste(genesToPlot, collapse=", "))
   plotExtrema <- Time.Profile.Extrema(genesToPlot)
-  par(xpd=TRUE, mar = par()$mar + c(0,0,0,3))
+  par(xpd=TRUE, mar = par()$mar + c(0,0,0,1))
   interp <- Expression.Profile.Interpolant(genesToPlot[1])
   profile <- geneData[genesToPlot[1],]
   curve(interp, from=0, to=48, col=plotColors[1], main=plotTitle, xlab="Time", ylab="Expression (log-fold)", ylim=c(plotExtrema$min, plotExtrema$max), lwd=1.5)
@@ -71,8 +71,8 @@ Plot.Gene.Group <- function(genesToPlot) {
     curve(interp, from=0, to=48, col=plotColors[i], add=T, xlab="Time", ylab="Expression (log-fold)", lwd=1.5)
     points(hours, profile, pch=20, col=plotColors[i])
   }
-  legend("topright", legend=genesToPlot, col=plotColors, fill=plotColors, cex=0.6, xpd=TRUE, inset=c(-.25,0)) 
-  par(xpd=FALSE, mar = par()$mar-c(0,0,0,3))
+  legend("topright", legend=genesToPlot, col=plotColors, fill=plotColors, cex=0.6, xpd=TRUE, inset=c(-.18,0)) 
+  par(xpd=FALSE, mar = par()$mar-c(0,0,0,1))
 }
 
 # For plotting purposes only: returns the largest and smallest expression
@@ -354,6 +354,8 @@ Optimize.g <- function(X, Y, mu0) {
   g <- tryCatch({ uniroot(objective, interval=c(0.01, 10))$root }, error=function(cond) { 1 })
   return(g)
 }
+
+
 
 # # Given two gene names, compute the following three (Bayesian) R^2 values:
 # # 1. The R^2 from regressing gene1 only on gene2 (simultaneous R^2 from simple
