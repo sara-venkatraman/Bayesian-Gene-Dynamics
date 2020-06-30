@@ -139,7 +139,7 @@ Compute.Gene.Pair.R2.Bayes <- function(gene1, gene2, g) {
   # If prior information is available for this gene pair, choose non-zero prior mean.
   # Otherwise, choose prior mean of zero.
   if(gene1 %in% rownames(priorMatrix) && gene2 %in% rownames(priorMatrix)) {
-    if(priorMatrix[gene1, gene2] == 1) { priorMean <- c(1,1,0,0,0) }
+    if(priorMatrix[gene1, gene2] >= 1) { priorMean <- c(1,1,0,0,0) }
     else { priorMean <- c(0,0,0,0,0) }
   }
   else { priorMean <- c(0,0,0,0,0) }
@@ -282,8 +282,11 @@ Compute.R2.Matrices <- function(genesSubset, bayes=TRUE) {
 
 # Given a vector of gene names, and the output of the Compute.R2.Matrices function,
 # turn the upper-triangular halves of each R^2 matrix into a vector (this is 
-# primarily for use with ggplot). Row names are the gene pairs.
-Vectorize.R2.Matrices <- function(genesSubset, R2Matrices) {
+# primarily for use with ggplot). Row names are the gene pairs. Optional parameter 
+# for prior separation: if TRUE, the returned "priorVector" will contain "0" if the 
+# corresponding entry of the prior matrix = 0, "1A" if the STRING entry = 1, "1B" if
+# the replicate entry = 1, and "2" if both the STRING and replicate entries = 1.
+Vectorize.R2.Matrices <- function(genesSubset, R2Matrices, separatePriors=FALSE) {
   matrix1 <- R2Matrices$matrix1
   matrix2 <- R2Matrices$matrix2
   matrix3 <- R2Matrices$matrix3
@@ -299,7 +302,13 @@ Vectorize.R2.Matrices <- function(genesSubset, R2Matrices) {
       vector1[k] <- matrix1[i,j]
       vector2[k] <- matrix2[i,j]
       vector3[k] <- matrix3[i,j]
-      priorVector[k] <- priorMatrix[i,j]
+      if(separatePriors == TRUE) {
+        if(priorMatrix[i,j] == 0) { priorVector[k] <- 0 }
+        else if(priorMatrix[i,j] == 2) { priorVector[k] <- 2 }
+        else if(priorMatrixString[i,j] == 1) { priorVector[k] <- 0.67 }
+        else if(priorMatrixReplicates[i,j] == 1) { priorVector[k] <- 1.33 }
+      } 
+      else { priorVector[k] <- priorMatrix[i,j] }
       pairLabels[k] <-  paste(rownames(matrix1)[i], ", ", colnames(matrix1)[j], sep="")
       k <- k+1
     } 
@@ -314,22 +323,31 @@ Vectorize.R2.Matrices <- function(genesSubset, R2Matrices) {
 # Given a vector of gene names and the output of the Compute.R2.Matrices function,
 # draw an interactive scatterplot of the model 1 R^2 against the difference of the 
 # R^2 values from models 2 and 3. Color points differently if prior information
-# is available for the corresponding gene pairs
+# is available for the corresponding gene pairs. Optional argument to specify whether
+# points should be colored according to whether zero, one, or two prior sources 
+# indicated an association.
 library(plotly);  library(ggplot2)
-Draw.Metric.Scatterplot.For.Binary.Prior <- function(R2Matrices, bayes) {
-  R2Vectors <- Vectorize.R2.Matrices(genesSubset, R2Matrices)
+Draw.Metric.Scatterplot.For.Binary.Prior <- function(R2Matrices, bayes, colorPriors=FALSE) {
+  R2Vectors <- Vectorize.R2.Matrices(genesSubset, R2Matrices, separatePriors=colorPriors)
   vec1 <- R2Vectors$vector1
   vec2 <- R2Vectors$vector2
   vec3 <- R2Vectors$vector3
-  priorVec <- R2Vectors$priorVector
   
+  if(colorPriors == TRUE) { priorVec <- R2Vectors$priorVector } 
+  else { priorVec <- (R2Vectors$priorVector >= 1) + 0 }
+
   plotData <- as.data.frame(cbind(round(vec1, 4), round(abs(vec2-vec3), 4), priorVec))
-  colnames(plotData) <- c("Model1", "Model2Model3Diff", "prior")
-  plotData$prior <- as.character(plotData$prior)
-  p <- ggplot(plotData, aes(Model1, Model2Model3Diff, color=prior, text=row.names(plotData))) + 
+  colnames(plotData) <- c("x.axis", "y.axis", "Prior")
+  plotData$Prior <- as.character(plotData$Prior)
+  p <- ggplot(plotData, aes(x.axis, y.axis, color=Prior, text=row.names(plotData))) + 
     geom_point(size=0.9) + xlab('Model 1 R^2') + ylab('Difference between model 2 and model 3 R^2') + 
-    ggtitle("Comparison of Empirical Bayes R^2 Values") + theme_light() + theme(legend.position="none") +
-    scale_color_manual(values=c("navy","orangered3"))
+    ggtitle("Comparison of Empirical Bayes R^2 Values") + theme_light() + theme(legend.position="none")
+  if(colorPriors == TRUE) {
+    p <- p + scale_color_manual(values=c("navy","orangered3","goldenrod1","forestgreen"))
+  }
+  else {
+    p <- p + scale_color_manual(values=c("navy","orangered3"))
+  }
   if(bayes == TRUE) { p <- p + ggtitle("Comparison of Empirical Bayes R^2 Values") }
   else { p <- p + ggtitle("Comparison of R^2 Values (Non-Bayesian)")}
   ggplotly(p)
