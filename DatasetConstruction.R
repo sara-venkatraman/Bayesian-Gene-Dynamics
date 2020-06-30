@@ -91,7 +91,7 @@ for(i in 1:length(geneNames)) {
     # Get the IDs of the associated genes
     STRINGscores <- stringDBMatrix[index,]
     
-    # Find the column indices of genes scores were >= 200
+    # Find the column indices of genes scores above some threshold
     associatedIndices <- which(STRINGscores >= 900)
     associatedIDs <- colnames(stringDBMatrix)[associatedIndices]
     
@@ -108,6 +108,9 @@ for(i in 1:length(geneNames)) {
 }
 
 DEgenesNeighbors <- unique(DEgenesNeighbors)
+
+# Sanity check: these numbers should all be high
+# stringDBMatrix[index, associatedIDs[1:5]]
 
 # How many new neighbors are added?
 # - With STRING score threshold of >= 200, we add 9328 new genes to the set of 951.
