@@ -119,24 +119,27 @@ DEgenesNeighbors <- unique(DEgenesNeighbors)
 # - With STRING score threshold of >= 900, we add 2147 new genes (2013 after excluding NAs).
 
 # Construct a dataset containing the log-fold change expression values from both the
-# differentially-expressed genes and the neighbors
+# differentially-expressed genes and the neighbors. Also save the normalized counts from
+# both replicates
 
-# Load the full dataset from the experiment
+# Load the full dataset from the experiment and set row names of full dataset to Flybase ID for easier access to certain rows
 load("../Drosophila Data (Processed)/full_results.Rdata")
 
-# Set row names of full dataset to Flybase ID for easier access to certain rows
 rownames(full_results) <- full_results$gene_ID
 
-# Extract the expression data for the neighbor genes identified above
+# Extract the expression data for the neighbor genes identified above and exclude rows with missing data
 geneDataNewNeighbors <- full_results[DEgenesNeighbors,]
-
-# Exclude rows with missing data
 geneDataNewNeighbors <- geneDataNewNeighbors[complete.cases(geneDataNewNeighbors),]
 
 # Set row names back to gene names and save only the log-fold change data from early timeframe
 rownames(geneDataNewNeighbors) <- geneDataNewNeighbors$gene_name
-geneDataNewNeighbors <- geneDataNewNeighbors[,3:19]
 
-# Write to CSV
-write.csv(geneDataNewNeighbors, "../Processed Data for Clustering/LogChangeDENeighbors900.csv")
+# Extract log-fold changes and data from two replicates
+neighborsLogChange <- geneDataNewNeighbors[, 3:19]
+neighborsNormCountsRep1 <- geneDataNewNeighbors[, 75:95]
+neighborsNormCountsRep2 <- geneDataNewNeighbors[, 96:115] # Missing time point 4
 
+# Write CSV files
+write.csv(neighborsLogChange, "../Processed Data for Clustering/DEneighbors900LogChange.csv")
+write.csv(neighborsNormCountsRep1, "../Processed Data for Clustering/DEneighbors900normCountsRep1.csv")
+write.csv(neighborsNormCountsRep2, "../Processed Data for Clustering/DEneighbors900normCountsRep2.csv")
