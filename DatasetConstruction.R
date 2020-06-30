@@ -64,7 +64,7 @@ write.csv(stringDBMatrix, file="Dme_STRING_exp_matrix.csv")
 
 # ------------------------------------------------------------------
 
-# Create a CSV dataset of differentially-expressed genes and their neighbors as
+# Create CSV dataset of differentially-expressed genes and their neighbors as
 # identified by composite STRING-DB scores. To run this code, first run the functions 
 # Gene.Name.To.Flybase.ID and Flybase.ID.To.Gene.Name in EmpiricalBayesFunctions.R.
 
@@ -139,7 +139,63 @@ neighborsLogChange <- geneDataNewNeighbors[, 3:19]
 neighborsNormCountsRep1 <- geneDataNewNeighbors[, 75:95]
 neighborsNormCountsRep2 <- geneDataNewNeighbors[, 96:115] # Missing time point 4
 
-# Write CSV files
+# Write CSV files for log-fold changes, two replicates, gene names, and gene IDs
 write.csv(neighborsLogChange, "../Processed Data for Clustering/DEneighbors900LogChange.csv")
 write.csv(neighborsNormCountsRep1, "../Processed Data for Clustering/DEneighbors900normCountsRep1.csv")
 write.csv(neighborsNormCountsRep2, "../Processed Data for Clustering/DEneighbors900normCountsRep2.csv")
+write.csv(geneDataNewNeighbors$gene_name, "../Processed Data for Clustering/DEneighbors900geneNames.csv", row.names=F)
+write.csv(geneDataNewNeighbors$gene_ID, "../Processed Data for Clustering/DEneighbors900geneIDs.csv", row.names=F)
+
+# ------------------------------------------------------------------
+
+# Create CSV dataset (including log-fold change, replicate data, gene IDs, and gene names) 
+# which combines data from differentially-expressed genes *and* their neighbors as
+# identified by STRING-DB
+
+# Read data for DE genes 
+DElogChange <- read.csv("../Processed Data for Clustering/DElogChange.csv")
+DEnormCountsRep1 <- read.csv("../Processed Data for Clustering/DEnormCountsRep1.csv")
+DEnormCountsRep2 <- read.csv("../Processed Data for Clustering/DEnormCountsRep2.csv")
+DEnames <- read.csv("../Processed Data for Clustering/DEgeneNames.csv")
+DEids <- read.csv("../Processed Data for Clustering/DEgeneIDs.csv")
+
+# Read data for DE gene neighbors
+neighborsLogChange <- read.csv("../Processed Data for Clustering/DEneighbors900LogChange.csv")
+neighborsNormCountsRep1 <- read.csv("../Processed Data for Clustering/DEneighbors900normCountsRep1.csv")
+neighborsNormCountsRep2 <- read.csv("../Processed Data for Clustering/DEneighbors900normCountsRep2.csv")
+neighborsNames <- read.csv("../Processed Data for Clustering/DEneighbors900geneNames.csv")
+neighborsIDs <- read.csv("../Processed Data for Clustering/DEneighbors900geneIDs.csv")
+
+# First combine gene names from both sets and save alphabetical ordering
+combinedNames <- rbind(DEnames, neighborsNames)
+ordering <- order(combinedNames)
+
+# Combine remaining datasets
+combinedIDs <- rbind(DEids, neighborsIDs)
+combinedLogChange <- rbind(DElogChange, neighborsLogChange)
+combinedNormCountsRep1 <- rbind(DEnormCountsRep1, neighborsNormCountsRep1)
+combinedNormCountsRep2 <- rbind(DEnormCountsRep2, neighborsNormCountsRep2)
+
+# Sort all combined datasets
+combinedNames$geneName <- combinedNames$geneName[ordering]
+combinedIDs$geneID <- combinedIDs$geneID[ordering]
+combinedLogChange <- combinedLogChange[ordering,]
+combinedNormCountsRep1 <- combinedNormCountsRep1[ordering,]
+combinedNormCountsRep2 <- combinedNormCountsRep2[ordering,]
+
+# Adjust row names
+rownames(combinedLogChange) <- combinedNames$geneName
+rownames(combinedNormCountsRep1) <- combinedNames$geneName
+rownames(combinedNormCountsRep2) <- combinedNames$geneName
+
+# Remove redundant gene name column
+combinedLogChange <- combinedLogChange[,-1]
+combinedNormCountsRep1 <- combinedNormCountsRep1[,-1]
+combinedNormCountsRep2 <- combinedNormCountsRep2[,-1]
+
+# Write CSVs
+write.csv(combinedLogChange, "../Processed Data for Clustering/CombinedLogChange.csv")
+write.csv(combinedNormCountsRep1, "../Processed Data for Clustering/CombinedNormCountsRep1.csv")
+write.csv(combinedNormCountsRep2, "../Processed Data for Clustering/CombinedNormCountsRep2.csv")
+write.csv(combinedNames$geneName, "../Processed Data for Clustering/CombinedGeneNames.csv", row.names=F)
+write.csv(combinedIDs$geneID, "../Processed Data for Clustering/CombinedGeneIDs.csv", row.names=F)
