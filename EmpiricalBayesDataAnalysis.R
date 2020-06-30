@@ -249,7 +249,7 @@ genesInCluster <- rownames(weightMatrix)[weightMatrix[,clusterIndex] > (1/numClu
 Plot.Gene.Group(genesInCluster)
 
 # Plot clusters in a PDF
-pdf("GeneClusters.pdf", height=7, width=12)
+pdf("GeneClusters.pdf", height=8, width=12)
 par(mfrow=c(2,2), mai=c(0.8,1.1,0.8,1.1))
 for(i in seq(1, numClusters)) {
   tol <- 0.00000018
@@ -259,6 +259,21 @@ for(i in seq(1, numClusters)) {
   }
 }
 dev.off(); par(mfrow=c(1,1))
+
+# --- Interesting plots that we obtain after adding neighbors of DE genes to dataset ---
+
+# Prior matrix = 2 for all these genes
+Plot.Gene.Group(c("RpL39","RpS6","RpS21","RpL31","RpL10Ab","RpL26"))
+c("RpL39","RpS6","RpS21","RpL31","RpL10Ab","RpL26") %in% DEgeneNames # None were DE!
+
+# Prior matrix = 2 for all these genes
+Plot.Gene.Group(c("Vha36-1","Vha14-1","VhaM8.9"))
+
+# Add some more genes which did not have entry 2 in prior matrix
+Plot.Gene.Group(c("Vha36-1","Vha14-1","VhaM8.9","Vha100-3","RpL12","VhaM9.7-b","Vha16-5"))
+
+# Prior matrix = 2 for all these genes
+Plot.Gene.Group(c("Cul3","Cand1","mib2"))
 
 # --- Soft clustering implementation (to be continued) ---
 
@@ -285,8 +300,4 @@ dev.off(); par(mfrow=c(1,1))
 #     continue <- FALSE
 #   }
 # }
-
-
-
-
 
