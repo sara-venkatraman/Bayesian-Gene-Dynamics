@@ -13,8 +13,12 @@ source("EmpiricalBayesFunctions.R")
 nonBayesR2Matrices <- Compute.R2.Matrices(genesSubset, bayes=FALSE)
 bayesR2Matrices <- Compute.R2.Matrices(genesSubset, bayes=TRUE)
 
+# Save components of output from R^2 computations
+bayesR2MatricesVec <- Vectorize.R2.Matrices(genesSubset, bayesR2Matrices, separatePriors=TRUE)
+
 Draw.Metric.Scatterplot.For.Binary.Prior(nonBayesR2Matrices, bayes=FALSE)
 Draw.Metric.Scatterplot.For.Binary.Prior(bayesR2Matrices, bayes=TRUE)
+Draw.Metric.Scatterplot.For.Binary.Prior(bayesR2Matrices, bayes=TRUE, colorPriors=TRUE)
 
 # --- Hierarchical clustering using empirical Bayes R^2 ---
 
@@ -274,6 +278,7 @@ Plot.Gene.Group(c("Vha36-1","Vha14-1","VhaM8.9","Vha100-3","RpL12","VhaM9.7-b","
 
 # Prior matrix = 2 for all these genes
 Plot.Gene.Group(c("Cul3","Cand1","mib2"))
+Plot.Gene.Group(c("RpL12","RpS15","RpL12","RpS4"))
 
 # --- Soft clustering implementation (to be continued) ---
 
