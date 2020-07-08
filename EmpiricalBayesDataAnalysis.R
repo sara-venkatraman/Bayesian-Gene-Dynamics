@@ -10,15 +10,76 @@ source("EmpiricalBayesFunctions.R")
 
 # --- Construct scatterplots (with and without Bayesian regression) ---
 
+cat("Computations began at:", date(), "\n")
 nonBayesR2Matrices <- Compute.R2.Matrices(genesSubset, bayes=FALSE)
+cat("Computations ended at:", date(), "\n")
+
+cat("Computations began at:", date(), "\n")
 bayesR2Matrices <- Compute.R2.Matrices(genesSubset, bayes=TRUE)
+cat("Computations ended at:", date(), "\n")
+
+# Note: for 200 genes, line 18 takes 3 minutes to complete.
+# Note: for 250 genes, line 18 takes 4 minutes to complete.
 
 # Save components of output from R^2 computations
+nonBayesR2MatricesVec <- Vectorize.R2.Matrices(genesSubset, nonBayesR2Matrices, separatePriors=FALSE)
 bayesR2MatricesVec <- Vectorize.R2.Matrices(genesSubset, bayesR2Matrices, separatePriors=TRUE)
 
-Draw.Metric.Scatterplot.For.Binary.Prior(nonBayesR2Matrices, bayes=FALSE)
-Draw.Metric.Scatterplot.For.Binary.Prior(bayesR2Matrices, bayes=TRUE)
+nonBayesVec1 <- nonBayesR2MatricesVec$vector1;  nonBayesVec2 <- nonBayesR2MatricesVec$vector2;  nonBayesVec3 <- nonBayesR2MatricesVec$vector3
+bayesVec1 <- bayesR2MatricesVec$vector1;  bayesVec2 <- bayesR2MatricesVec$vector2;  bayesVec3 <- bayesR2MatricesVec$vector3
+
+Draw.Metric.Scatterplot.For.Binary.Prior(nonBayesR2Matrices, bayes=FALSE, colorPriors=TRUE)
+Draw.Metric.Scatterplot.For.Binary.Prior(bayesR2Matrices, bayes=TRUE, colorPriors=FALSE)
 Draw.Metric.Scatterplot.For.Binary.Prior(bayesR2Matrices, bayes=TRUE, colorPriors=TRUE)
+
+# Plots for presentation purposes
+par(mai=c(1.05,1.05,1.05,1.05))
+plot(nonBayesVec1, nonBayesVec2-nonBayesVec3, cex=0.7, 
+     col=ifelse(nonBayesR2MatricesVec$priorVector > 0, "red","navy"), 
+     xlab=TeX("Model 1 $R^2$"), ylab=TeX("Difference of lead-lag and model 2 $R^2$"),
+     main=TeX("Comparison of $R^2$ from Three Models"))
+plot(bayesVec1, abs(bayesVec2-bayesVec3), cex=0.7, col=ifelse(bayesR2MatricesVec$priorVector > 0, "red", "navy"), 
+     xlab=TeX("Model 1 $R^2$"), ylab=TeX("Difference of lead-lag and model 2 $R^2$"),
+     main=TeX("Comparison of $R^2$ (Bayesian regression)"))
+upperRightNonBayes <- rownames(nonBayesVec1)[nonBayesVec1 > 0.65 & (nonBayesVec2-nonBayesVec3) > 0.5]
+upperRightBayes <- rownames(bayesVec1)[bayesVec1 > 0.5 & (bayesVec2-bayesVec3) > 0.4]
+
+par(mfrow=c(1,3))
+hist(nonBayesVec2, main=TeX('Lead-lag $R^2$'), col="goldenrod2", xlab=TeX("$R^2$"))
+hist(nonBayesVec1, main=TeX('$R^2$ from Model 1'), col="goldenrod2", xlab=TeX("$R^2$"))
+hist(nonBayesVec2-nonBayesVec3, main=TeX('Lead-lag $R^2$ - Model 2 $R^2$'), col="goldenrod2", xlab=TeX("Difference of $R^2$ values"))
+
+hist(bayesVec2, main=TeX('Lead-lag $R^2$'), col="goldenrod2", xlab=TeX("$R^2$"))
+hist(bayesVec1, main=TeX('$R^2$ from Model 1'), col="goldenrod2", xlab=TeX("$R^2$"))
+hist(bayesVec2-bayesVec3, main=TeX('Lead-lag $R^2$ - Model 2 $R^2$'), col="goldenrod2", xlab=TeX("Difference of $R^2$ values"))
+par(mfrow=c(1,1))
+
+# How does Bayesian regression change the distribution of R^2 values?
+library(latex2exp)
+par(mfrow=c(1,2))
+hist(nonBayesR2MatricesVec$vector1, main=TeX('$R^2$ from Model 1 (Non-Bayesian)'), col="darkslategray3", xlab=TeX("$R^2$ from Model 1"))
+hist(bayesR2MatricesVec$vector1, main=TeX('$R^2$ from Model 1 (Bayesian)'), col="darkslategray3", xlab=TeX("$R^2$ from Model 1"))
+
+hist(nonBayesR2MatricesVec$vector2, main=TeX('$R^2$ from Model 2 (Non-Bayesian)'), col="goldenrod2", xlab=TeX("$R^2$ from Model 2"))
+hist(bayesR2MatricesVec$vector2, main=TeX('$R^2$ from Model 2 (Bayesian)'), col="goldenrod2", xlab=TeX("$R^2$ from Model 2"))
+
+hist(nonBayesR2MatricesVec$vector3, main=TeX('$R^2$ from Model 3 (Non-Bayesian)'), col="darkolivegreen3", xlab=TeX("$R^2$ from Model 3"))
+hist(bayesR2MatricesVec$vector3, main=TeX('$R^2$ from Model 3 (Bayesian)'), col="darkolivegreen3", xlab=TeX("$R^2$ from Model 3"))
+
+par(mfrow=c(1,1))
+
+# Check distribution of g
+hist(bayesR2MatricesVec$gVector) # Not very helpful
+summary(bayesR2MatricesVec$gVector)
+
+# Print how many values of g were < 1, = 1, between 1 and 2, and greater than 2
+gVector <- bayesR2MatricesVec$gVector
+cat("Gene pairs with g < 1: ", sum(gVector < 1), "\nGene pairs with g = 1: ", sum(gVector == 1), 
+    "\nGene pairs with 1 < g < 2: ", sum(gVector > 1 & gVector < 2), "\nGene pairs with g > 2: ",
+    sum(gVector > 2), sep="")
+
+# Check R^2 distribution
+hist(bayesR2MatricesVec$vector1)
 
 # --- Hierarchical clustering using empirical Bayes R^2 ---
 
@@ -49,13 +110,14 @@ Plot.Gene.Pair("gene1","gene2"); Compute.Gene.Pair.R2("gene1","gene2"); Compute.
 # --- Signal retention ---
 
 # How many gene pairs are in each quadrant of the plot, and what do the pair plots look like for those in the upper-right quadrant?
-bayesR2MatricesVec <- Vectorize.R2.Matrices(genesSubset, bayesR2Matrices)
-bayesVec1 <- bayesR2MatricesVec$vector1;  bayesVec2 <- bayesR2MatricesVec$vector2;  bayesVec3 <- bayesR2MatricesVec$vector3
-upperRight <- rownames(bayesVec1)[bayesVec1 > 0.5 & bayesVec2-bayesVec3 > 0.2]
-lowerRight <- rownames(bayesVec1)[bayesVec1 > 0.5 & bayesVec2-bayesVec3 <= 0.2] 
-lowerLeft <- rownames(bayesVec1)[bayesVec1 <= 0.5 & bayesVec2-bayesVec3 <= 0.2] 
-upperLeft <- rownames(bayesVec1)[bayesVec1 <= 0.5 & bayesVec2-bayesVec3 > 0.2]  # upper-left quadrant - interesting patterns here, but not always close
-lapply(list(upperRight, lowerRight, lowerLeft, upperLeft), function(x) { return(length(x)/length(bayesVec1)) }) # Print the above in proportions
+# Count number of gene pairs in each quadrant of the scatterplot
+upperRight <- rownames(bayesVec1)[bayesVec1 > 0.65 & bayesVec2-bayesVec3 > 0.4]
+lowerRight <- rownames(bayesVec1)[bayesVec1 > 0.65 & bayesVec2-bayesVec3 <= 0.4] 
+lowerLeft <- rownames(bayesVec1)[bayesVec1 <= 0.65 & bayesVec2-bayesVec3 <= 0.4] 
+upperLeft <- rownames(bayesVec1)[bayesVec1 <= 0.65 & bayesVec2-bayesVec3 > 0.4]
+
+# Print proportion of gene pairs in each quadrant
+lapply(list(upperRight, lowerRight, lowerLeft, upperLeft), function(x) { return(length(x)/length(bayesVec1)) })
 
 # Plot all the gene pairs that are in the upper-right quadrant
 pdf("../Graphs/GenePairsUpperRightQuadrant.pdf", height=9, width=11)
@@ -70,7 +132,33 @@ for(i in seq(1, length(upperRight), by=9)) {
 }
 dev.off(); par(mfrow=c(1,1))
 
-# Some interesting plots that come out of the above PDF ("connected components")
+# Plot all the gene pairs that are in the lower-right quadrant
+pdf("../Graphs/GenePairsLowerRightQuadrant.pdf", height=9, width=11)
+for(i in seq(1, length(lowerRight), by=9)) {
+  par(mfrow=c(3,3), mai=c(0.6,0.6,0.6,0.6))
+  for(j in 1:9) {
+    if(i+(j-1) <= length(lowerRight)) {
+      genePair <- strsplit(lowerRight[i+(j-1)], ", ")[[1]]
+      Plot.Gene.Pair(genePair[1], genePair[2]) 
+    }
+  }
+}
+dev.off(); par(mfrow=c(1,1))
+
+# Plot all the gene pairs that are in the upper-left quadrant
+pdf("../Graphs/GenePairsUpperLeftQuadrant.pdf", height=9, width=11)
+for(i in seq(1, length(upperLeft), by=9)) {
+  par(mfrow=c(3,3), mai=c(0.6,0.6,0.6,0.6))
+  for(j in 1:9) {
+    if(i+(j-1) <= length(upperLeft)) {
+      genePair <- strsplit(upperLeft[i+(j-1)], ", ")[[1]]
+      Plot.Gene.Pair(genePair[1], genePair[2]) 
+    }
+  }
+}
+dev.off(); par(mfrow=c(1,1))
+
+# Some interesting plots that come out of the upper-right PDF ("connected components")
 Plot.Gene.Group(c("Sodh-1","UGP","glob1","Gip","Pgi", "GstE9", "CG6084"))
 Plot.Gene.Group(c("vri","Slob","per","CG33511","Pdp1"))
 Plot.Gene.Pair("CG33511","vri") # In STRING-DB, no annotation available for CG33511. vri (clock-controlled) affects hair and cell growth

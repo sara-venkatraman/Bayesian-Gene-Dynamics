@@ -102,6 +102,8 @@ table(priorMatrix)
 # --- Construct prior matrix using both experimental STRING scores *and* replicates ---
 #     To construct this, run both section 2 and (one method from) section 3.
 
+cat("Computations began at:", date(), "\n")
+
 # Step 1: Construct binary prior matrix from STRING experimental scores as in section 2
 stringDBMatrix <- read.csv("../Processed Data for Clustering/Prior Matrices/Dme_STRING_exp_matrix.csv", header=T, row.names=1)
 stringMatrixSubset <- matrix(rep(0, subsetSize^2), nrow=subsetSize, ncol=subsetSize)
@@ -116,7 +118,6 @@ for(i in 1:subsetSize) {
   }
 }
 priorMatrixString <- (stringMatrixSubset >= 200) + 0
-table(priorMatrixString)
 
 # Step 2: Construct binary prior matrix from replicate data as in section 3, method 1
 coefficientMatrix <- matrix(rep(0, subsetSize^2), nrow=subsetSize, ncol=subsetSize)
@@ -131,6 +132,10 @@ for(i in 1:(subsetSize-1)) {
   }
 }
 priorMatrixReplicates <- (abs(coefficientMatrix) >= 0.85) + 0
+
+cat("Computations ended at:", date(), "\n")
+
+table(priorMatrixString)
 table(priorMatrixReplicates)
 
 # Step 3: Combine prior matrices
@@ -141,3 +146,5 @@ table(priorMatrix)
 
 # Check which entries were 2
 which(priorMatrix == 2, arr.ind = TRUE)
+
+# Note: for 200 genes, this prior matrix takes 57 seconds to compute.

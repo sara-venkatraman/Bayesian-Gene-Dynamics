@@ -175,7 +175,7 @@ Compute.Gene.Pair.R2.Bayes <- function(gene1, gene2, g) {
   return(list(R2Model1=R2Model1, R2Model2=R2Model2, R2Model3=R2Model3))
 }
 
-# Given two gene names, compute the following two R^2 values:
+# Given two gene names, compute the following three R^2 values:
 # 1. The R^2 from regressing gene1 only on gene2 (simultaneous R^2 from simple
 #    linear regression)
 # 2. The lead-lag R^2 from regressing gene1 on gene2 and itself (see 
@@ -210,18 +210,23 @@ Compute.Gene.Pair.R2 <- function(gene1, gene2) {
 # Matrix 3: (i,j) is the model 3 R^2 for gene i
 # These R^2 values can be computed with or without the Bayesian approach.
 # While the three R^2 metrics are not symmetric, the matrices are made to be
-# symmetric depending on the value of the model 2 R^2 (see implementation)
+# symmetric depending on the value of the model 2 R^2 (see implementation).
+# Additionally return a matrix whose (i,j) value is the value of g used in 
+# the g-prior for the regression between genes i and j if bayes=TRUE. Otherwise
+# all entries of the matrix are 1.
 Compute.R2.Matrices <- function(genesSubset, bayes=TRUE) {
   # Initialize the similarity matrices and set row/column names
   subsetSize <- length(genesSubset)
   matrix1 <- matrix(1, nrow=subsetSize, ncol=subsetSize)
   matrix2 <- matrix(1, nrow=subsetSize, ncol=subsetSize)
   matrix3 <- matrix(1, nrow=subsetSize, ncol=subsetSize)
+  gMatrix <- matrix(1, nrow=subsetSize, ncol=subsetSize)
   
   # Set row/column names
   rownames(matrix1) <- genesSubset; colnames(matrix1) <- genesSubset
   rownames(matrix2) <- genesSubset; colnames(matrix2) <- genesSubset
   rownames(matrix3) <- genesSubset; colnames(matrix3) <- genesSubset
+  rownames(gMatrix) <- genesSubset; colnames(gMatrix) <- genesSubset
 
   # Fill in the off-diagonal entries (i,j) with R^2 value between genes i and j
   for(i in 1:subsetSize) {
@@ -253,31 +258,36 @@ Compute.R2.Matrices <- function(genesSubset, bayes=TRUE) {
         else {
           R2.1 <- Compute.Gene.Pair.R2(gene1, gene2)
           R2.2 <- Compute.Gene.Pair.R2(gene2, gene1)
+          g1 <- 1;  g2 <- 1;
         }
         
         if(R2.1$R2Model2-R2.1$R2Model3 > R2.2$R2Model2-R2.2$R2Model3) {
           R2Model1 <- R2.1$R2Model1
           R2Model2 <- R2.1$R2Model2
           R2Model3 <- R2.1$R2Model3
+          g <- g1
         } else {
           R2Model1 <- R2.2$R2Model1
           R2Model2 <- R2.2$R2Model2
           R2Model3 <- R2.2$R2Model3
+          g <- g2
         }
         
         # Fill in upper-triangular entries of similarity matrices
         matrix1[i,j] <- R2Model1
         matrix2[i,j] <- R2Model2
         matrix3[i,j] <- R2Model3
+        gMatrix[i,j] <- g
 
         # Fill in lower-triangular entries of similarity matrices
         matrix1[j,i] <- R2Model1
         matrix2[j,i] <- R2Model2
         matrix3[j,i] <- R2Model3
+        gMatrix[j,i] <- g
       }
     }
   }
-  return(list(matrix1=matrix1, matrix2=matrix2, matrix3=matrix3))
+  return(list(matrix1=matrix1, matrix2=matrix2, matrix3=matrix3, gMatrix=gMatrix))
 }
 
 # Given a vector of gene names, and the output of the Compute.R2.Matrices function,
@@ -290,18 +300,21 @@ Vectorize.R2.Matrices <- function(genesSubset, R2Matrices, separatePriors=FALSE)
   matrix1 <- R2Matrices$matrix1
   matrix2 <- R2Matrices$matrix2
   matrix3 <- R2Matrices$matrix3
-
+  gMatrix <- R2Matrices$gMatrix
+  
   subsetSize <- length(genesSubset)
   vector1 <- matrix(0, nrow=sum(1:(subsetSize-1)))
   vector2 <- matrix(0, nrow=sum(1:(subsetSize-1)))
   vector3 <- matrix(0, nrow=sum(1:(subsetSize-1)))
   priorVector <- matrix(0, nrow=sum(1:(subsetSize-1)))
+  gVector <- matrix(0, nrow=sum(1:(subsetSize-1)))
   pairLabels <- c();  k <- 1
   for(i in 1:(subsetSize-1)) {
     for(j in (i+1):subsetSize) {
       vector1[k] <- matrix1[i,j]
       vector2[k] <- matrix2[i,j]
       vector3[k] <- matrix3[i,j]
+      gVector[k] <- gMatrix[i,j]
       if(separatePriors == TRUE) {
         if(priorMatrix[i,j] == 0) { priorVector[k] <- 0 }
         else if(priorMatrix[i,j] == 2) { priorVector[k] <- 2 }
@@ -317,7 +330,8 @@ Vectorize.R2.Matrices <- function(genesSubset, R2Matrices, separatePriors=FALSE)
   rownames(vector2) <- pairLabels
   rownames(vector3) <- pairLabels
   rownames(priorVector) <- pairLabels
-  return(list(vector1=vector1, vector2=vector2, vector3=vector3, priorVector=priorVector))
+  rownames(gVector) <- pairLabels
+  return(list(vector1=vector1, vector2=vector2, vector3=vector3, priorVector=priorVector, gVector=gVector))
 }
 
 # Given a vector of gene names and the output of the Compute.R2.Matrices function,
@@ -334,13 +348,13 @@ Draw.Metric.Scatterplot.For.Binary.Prior <- function(R2Matrices, bayes, colorPri
   vec3 <- R2Vectors$vector3
   
   if(colorPriors == TRUE) { priorVec <- R2Vectors$priorVector } 
-  else { priorVec <- (R2Vectors$priorVector >= 1) + 0 }
+  else { priorVec <- R2Vectors$priorVector > 0 }
 
   plotData <- as.data.frame(cbind(round(vec1, 4), round(abs(vec2-vec3), 4), priorVec))
-  colnames(plotData) <- c("x.axis", "y.axis", "Prior")
-  plotData$Prior <- as.character(plotData$Prior)
-  p <- ggplot(plotData, aes(x.axis, y.axis, color=Prior, text=row.names(plotData))) + 
-    geom_point(size=0.9) + xlab('Model 1 R^2') + ylab('Difference between model 2 and model 3 R^2') + 
+  colnames(plotData) <- c("x.axis", "y.axis", "prior")
+  plotData$prior <- as.factor(plotData$prior)
+  p <- ggplot(plotData, aes(x=x.axis, y=y.axis, color=prior, text=row.names(plotData))) + 
+    geom_point(shape=1, size=0.9) + xlab('Model 1 R^2') + ylab('Difference between model 2 and model 3 R^2') + 
     ggtitle("Comparison of Empirical Bayes R^2 Values") + theme_light() + theme(legend.position="none")
   if(colorPriors == TRUE) {
     p <- p + scale_color_manual(values=c("navy","orangered3","goldenrod1","forestgreen"))
@@ -351,6 +365,7 @@ Draw.Metric.Scatterplot.For.Binary.Prior <- function(R2Matrices, bayes, colorPri
   if(bayes == TRUE) { p <- p + ggtitle("Comparison of Empirical Bayes R^2 Values") }
   else { p <- p + ggtitle("Comparison of R^2 Values (Non-Bayesian)")}
   ggplotly(p)
+  # return(plotData)
 }
 
 # Given a design matrix X and a response vector Y, find the value of g which minimizes

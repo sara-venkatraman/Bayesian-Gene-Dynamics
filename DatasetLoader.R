@@ -24,12 +24,12 @@ geneNames <- as.character(geneNames$geneName)
 geneIDs <- as.character(geneIDs$geneID)
 
 # --- Subset selection: adjust as needed depending on choice of subdirectory ---
-# Define a subset of genes on which to run the R^2 analysis: half of the subset is 
-# differentially-expressed, the other half is neighbors
+# Define a subset of genes on which to run the R^2 analysis: 60% of the subset is 
+# differentially-expressed, the other 40% is neighbors
 DEgeneNames <- read.csv("../Processed Data for Clustering/Differentially-Expressed/GeneNames.csv")
 neighborGeneNames <- read.csv("../Processed Data for Clustering/Neighbors (STRING > 900)/GeneNames.csv")
 
 subsetSize <- 200
-DEsubset <- as.character(sample(DEgeneNames$geneName, size=0.5*subsetSize))
-neighborSubset <- as.character(sample(neighborGeneNames$geneName, size=0.5*subsetSize))
+DEsubset <- as.character(sample(DEgeneNames$geneName, size=0.6*subsetSize))
+neighborSubset <- as.character(sample(neighborGeneNames$geneName, size=0.4*subsetSize))
 genesSubset <- unique(c(DEsubset, neighborSubset)) # There should be no duplicates anyway
