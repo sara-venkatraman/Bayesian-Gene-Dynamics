@@ -127,6 +127,7 @@ Get.Gene.Data.As.Vector <- function(geneName) {
 #    Bayes approach (see writeup for more details -- regression coefficients are 
 #    taken to be the posterior mean from a normal-inverse gamma model with the g-prior)
 # 3. The R^2 from regressing gene1 only on time and its own time integrals
+# If g is not provided (default), compute the optimal g
 Compute.Gene.Pair.R2.Bayes <- function(gene1, gene2, g) {
   # Get the response vector and the design matrix for lead-lag regression (model 2)
   response <- Get.Gene.Data.As.Vector(gene1)
@@ -134,7 +135,7 @@ Compute.Gene.Pair.R2.Bayes <- function(gene1, gene2, g) {
   
   # If g is not specified, set g to 1 (regression coefficients are then the average
   # of the prior mean and the least-squares estimates)
-  if(missing(g)) { g <- 1 }
+  # if(missing(g)) { g <- 1 }
   
   # If prior information is available for this gene pair, choose non-zero prior mean.
   # Otherwise, choose prior mean of zero.
@@ -143,6 +144,11 @@ Compute.Gene.Pair.R2.Bayes <- function(gene1, gene2, g) {
     else { priorMean <- c(0,0,0,0,0) }
   }
   else { priorMean <- c(0,0,0,0,0) }
+  
+  # If g is not specified, set g to its optimal value
+  if(missing(g)) {
+    g <- Optimize.g(X, response, priorMean)
+  }
   
   # For the first R^2 value: set up design matrix (first and last column of full
   # design matrix), prior mean (first and last entry of full prior mean), posterior mean
@@ -172,7 +178,7 @@ Compute.Gene.Pair.R2.Bayes <- function(gene1, gene2, g) {
   R2Model3 <- var(fitModel3)/(var(fitModel3) + var(response-fitModel3))
   
   # Return the R^2 values
-  return(list(R2Model1=R2Model1, R2Model2=R2Model2, R2Model3=R2Model3))
+  return(list(R2Model1=R2Model1, R2Model2=R2Model2, R2Model3=R2Model3, g=g))
 }
 
 # Given two gene names, compute the following three R^2 values:
@@ -200,7 +206,7 @@ Compute.Gene.Pair.R2 <- function(gene1, gene2) {
   R2Model3 <- summary(model3)$r.squared
   
   # Return the R^2 values
-  return(list(R2Model1=R2Model1, R2Model2=R2Model2, R2Model3=R2Model3))
+  return(list(R2Model1=R2Model1, R2Model2=R2Model2, R2Model3=R2Model3, g=NA))
 }
 
 # Given a vector of gene names, construct the following three matrices:
@@ -248,29 +254,33 @@ Compute.R2.Matrices <- function(genesSubset, bayes=TRUE) {
             else { priorMean <- c(0,0,0,0,0) }
           }
           else { priorMean <- c(0,0,0,0,0) }
-          g1 <- Optimize.g(X1, Y1, priorMean)
-          g2 <- Optimize.g(X2, Y2, priorMean)
+          # g1 <- Optimize.g(X1, Y1, priorMean)
+          # g2 <- Optimize.g(X2, Y2, priorMean)
           
           # Compute R^2 values for both orderings of the gene pair
-          R2.1 <- Compute.Gene.Pair.R2.Bayes(gene1, gene2, g1)
-          R2.2 <- Compute.Gene.Pair.R2.Bayes(gene2, gene1, g2)
+          # R2.1 <- Compute.Gene.Pair.R2.Bayes(gene1, gene2, g1)
+          # R2.2 <- Compute.Gene.Pair.R2.Bayes(gene2, gene1, g2)
+          R2.1 <- Compute.Gene.Pair.R2.Bayes(gene1, gene2)
+          R2.2 <- Compute.Gene.Pair.R2.Bayes(gene2, gene1)
         }
         else {
           R2.1 <- Compute.Gene.Pair.R2(gene1, gene2)
           R2.2 <- Compute.Gene.Pair.R2(gene2, gene1)
-          g1 <- 1;  g2 <- 1;
+          # g1 <- 1;  g2 <- 1;
         }
         
         if(R2.1$R2Model2-R2.1$R2Model3 > R2.2$R2Model2-R2.2$R2Model3) {
           R2Model1 <- R2.1$R2Model1
           R2Model2 <- R2.1$R2Model2
           R2Model3 <- R2.1$R2Model3
-          g <- g1
+          g <- R2.1$g
+          # g <- g1
         } else {
           R2Model1 <- R2.2$R2Model1
           R2Model2 <- R2.2$R2Model2
           R2Model3 <- R2.2$R2Model3
-          g <- g2
+          g <- R2.2$g
+          # g <- g2
         }
         
         # Fill in upper-triangular entries of similarity matrices
@@ -365,7 +375,6 @@ Draw.Metric.Scatterplot.For.Binary.Prior <- function(R2Matrices, bayes, colorPri
   if(bayes == TRUE) { p <- p + ggtitle("Comparison of Empirical Bayes R^2 Values") }
   else { p <- p + ggtitle("Comparison of R^2 Values (Non-Bayesian)")}
   ggplotly(p)
-  # return(plotData)
 }
 
 # Given a design matrix X and a response vector Y, find the value of g which minimizes
