@@ -32,7 +32,7 @@ Draw.Metric.Scatterplot.For.Binary.Prior(nonBayesR2Matrices, bayes=FALSE, colorP
 Draw.Metric.Scatterplot.For.Binary.Prior(bayesR2Matrices, bayes=TRUE, colorPriors=FALSE)
 Draw.Metric.Scatterplot.For.Binary.Prior(bayesR2Matrices, bayes=TRUE, colorPriors=TRUE)
 
-# Plots for presentation purposes
+# Non-interactive plots for presentation purposes
 par(mai=c(1.05,1.05,1.05,1.05))
 plot(nonBayesVec1, nonBayesVec2-nonBayesVec3, cex=0.7, 
      col=ifelse(nonBayesR2MatricesVec$priorVector > 0, "red","navy"), 
@@ -367,6 +367,56 @@ Plot.Gene.Group(c("Vha36-1","Vha14-1","VhaM8.9","Vha100-3","RpL12","VhaM9.7-b","
 # Prior matrix = 2 for all these genes
 Plot.Gene.Group(c("Cul3","Cand1","mib2"))
 Plot.Gene.Group(c("RpL12","RpS15","RpL12","RpS4"))
+
+# --- Simulations with parameter g ---
+
+Plot.R2.Variation.With.g <- function(gene1, gene2) {
+  gTest <- seq(0.01, 10, length.out=10)
+  R2TestPrior1 <- matrix(0, nrow=length(gTest), ncol=3)
+  R2TestPrior0 <- matrix(0, nrow=length(gTest), ncol=3)
+  for(i in 1:length(gTest)) {
+    R2outputPrior1 <- Compute.Gene.Pair.R2.Bayes(gene1, gene2, g=gTest[i], priorMean=c(1,1,0,0,0))
+    R2outputPrior0 <- Compute.Gene.Pair.R2.Bayes(gene1, gene2, g=gTest[i], priorMean=c(0,0,0,0,0))
+    R2TestPrior1[i,1] <- R2outputPrior1$R2Model1;  R2TestPrior1[i,2] <- R2outputPrior1$R2Model2;  R2TestPrior1[i,3] <- R2outputPrior1$R2Model3
+    R2TestPrior0[i,1] <- R2outputPrior0$R2Model1;  R2TestPrior0[i,2] <- R2outputPrior0$R2Model2;  R2TestPrior0[i,3] <- R2outputPrior0$R2Model3
+  }
+  
+  par(mfrow=c(1,3))
+  plot(gTest, R2TestPrior0[,1], main=paste(paste(gene1, gene2, sep=", "), "\nModel 1 R^2 vs. g", sep=""), xlab="g", ylab="Model 1 R^2", col="red", type="o", pch=19, ylim=c(min(min(R2TestPrior0[,1]), min(R2TestPrior1[,1])), max(max(R2TestPrior0[,1]), max(R2TestPrior1[,1]))))
+  points(gTest, R2TestPrior1[,1], main=paste(paste(gene1, gene2, sep=", "), "\nModel 1 R^2 vs. g", sep=""), xlab="g", ylab="Model 1 R^2", col="blue", type="o", pch=19)
+  legend("bottomright", legend=c("Prior = 0", "Prior = 1"), col=c("red", "blue"), fill=c("red", "blue"), horiz=TRUE, cex=0.6) 
+  plot(gTest, R2TestPrior0[,2], main=paste(paste(gene1, gene2, sep=", "), "\nModel 2 (lead-lag) R^2 vs. g", sep=""), xlab="g", ylab="Model 2 R^2", col="red", type="o", pch=19, ylim=c(min(min(R2TestPrior0[,2]), min(R2TestPrior1[,2])), max(max(R2TestPrior0[,2]), max(R2TestPrior1[,2]))))
+  points(gTest, R2TestPrior1[,2], main=paste(paste(gene1, gene2, sep=", "), "\nModel 2 (lead-lag) R^2 vs. g", sep=""), xlab="g", ylab="Model 2 R^2", col="blue", type="o", pch=19)
+  legend("bottomright", legend=c("Prior = 0", "Prior = 1"), col=c("red", "blue"), fill=c("red", "blue"), horiz=TRUE, cex=0.6) 
+  plot(gTest, R2TestPrior0[,3], main=paste(paste(gene1, gene2, sep=", "), "\nModel 3 R^2 vs. g", sep=""), xlab="g", ylab="Model 3 R^2", col="red", type="o", pch=19, ylim=c(min(min(R2TestPrior0[,3]), min(R2TestPrior1[,3])), max(max(R2TestPrior0[,3]), max(R2TestPrior1[,3]))))
+  points(gTest, R2TestPrior1[,3], main=paste(paste(gene1, gene2, sep=", "), "\nModel 3 R^2 vs. g", sep=""), xlab="g", ylab="Model 3 R^2", col="blue", type="o", pch=19)
+  legend("bottomright", legend=c("Prior = 0", "Prior = 1"), col=c("red", "blue"), fill=c("red", "blue"), horiz=TRUE, cex=0.6) 
+  par(mfrow=c(1,1))
+}
+
+# Take some genes that are related but set prior to 0
+gene1 <- "IM1";  gene2 <- "IM14"
+priorMatrix[gene1, gene2]
+Plot.Gene.Pair(gene1, gene2)
+Plot.R2.Variation.With.g("IM1","IM14")
+
+gene1 <- "Rrp6";  gene2 <- "CG5103"  # CG5103 not identified as top neighbor of Rrp6 - only replicate data evidence
+Plot.Gene.Pair(gene1, gene2)
+Plot.R2.Variation.With.g(gene1, gene2)
+
+gene1 <- "Gal";  gene2 <- "Mal-A7"
+Plot.Gene.Pair(gene1, gene2)
+Plot.R2.Variation.With.g(gene1, gene2)
+
+# Take genes that are not related but set prior to 1
+gene1 <- "Fit1";  gene2 <- "Eip55E"
+Plot.Gene.Pair(gene1, gene2)
+Plot.R2.Variation.With.g(gene1, gene2)
+
+gene1 <- "Sec5";  gene2 <- "Jon99Fi"
+Plot.Gene.Pair(gene1, gene2)
+Plot.R2.Variation.With.g(gene1, gene2)
+
 
 # --- Soft clustering implementation (to be continued) ---
 
