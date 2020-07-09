@@ -128,22 +128,20 @@ Get.Gene.Data.As.Vector <- function(geneName) {
 #    taken to be the posterior mean from a normal-inverse gamma model with the g-prior)
 # 3. The R^2 from regressing gene1 only on time and its own time integrals
 # If g is not provided (default), compute the optimal g
-Compute.Gene.Pair.R2.Bayes <- function(gene1, gene2, g) {
+Compute.Gene.Pair.R2.Bayes <- function(gene1, gene2, g, priorMean) {
   # Get the response vector and the design matrix for lead-lag regression (model 2)
   response <- Get.Gene.Data.As.Vector(gene1)
   X <- Construct.Design.Matrix(gene1, gene2)
   
-  # If g is not specified, set g to 1 (regression coefficients are then the average
-  # of the prior mean and the least-squares estimates)
-  # if(missing(g)) { g <- 1 }
-  
   # If prior information is available for this gene pair, choose non-zero prior mean.
   # Otherwise, choose prior mean of zero.
-  if(gene1 %in% rownames(priorMatrix) && gene2 %in% rownames(priorMatrix)) {
-    if(priorMatrix[gene1, gene2] >= 1) { priorMean <- c(1,1,0,0,0) }
+  if(missing(priorMean)) {
+    if(gene1 %in% rownames(priorMatrix) && gene2 %in% rownames(priorMatrix)) {
+      if(priorMatrix[gene1, gene2] >= 1) { priorMean <- c(1,1,0,0,0) }
+      else { priorMean <- c(0,0,0,0,0) }
+    }
     else { priorMean <- c(0,0,0,0,0) }
   }
-  else { priorMean <- c(0,0,0,0,0) }
   
   # If g is not specified, set g to its optimal value
   if(missing(g)) {
@@ -254,12 +252,8 @@ Compute.R2.Matrices <- function(genesSubset, bayes=TRUE) {
             else { priorMean <- c(0,0,0,0,0) }
           }
           else { priorMean <- c(0,0,0,0,0) }
-          # g1 <- Optimize.g(X1, Y1, priorMean)
-          # g2 <- Optimize.g(X2, Y2, priorMean)
           
           # Compute R^2 values for both orderings of the gene pair
-          # R2.1 <- Compute.Gene.Pair.R2.Bayes(gene1, gene2, g1)
-          # R2.2 <- Compute.Gene.Pair.R2.Bayes(gene2, gene1, g2)
           R2.1 <- Compute.Gene.Pair.R2.Bayes(gene1, gene2)
           R2.2 <- Compute.Gene.Pair.R2.Bayes(gene2, gene1)
         }
@@ -356,14 +350,22 @@ Draw.Metric.Scatterplot.For.Binary.Prior <- function(R2Matrices, bayes, colorPri
   vec1 <- R2Vectors$vector1
   vec2 <- R2Vectors$vector2
   vec3 <- R2Vectors$vector3
+  gVec <- R2Vectors$gVector
   
   if(colorPriors == TRUE) { priorVec <- R2Vectors$priorVector } 
   else { priorVec <- R2Vectors$priorVector > 0 }
-
+  
   plotData <- as.data.frame(cbind(round(vec1, 4), round(abs(vec2-vec3), 4), priorVec))
   colnames(plotData) <- c("x.axis", "y.axis", "prior")
   plotData$prior <- as.factor(plotData$prior)
-  p <- ggplot(plotData, aes(x=x.axis, y=y.axis, color=prior, text=row.names(plotData))) + 
+  
+  if(bayes == TRUE) {
+    hoverText <- paste(row.names(plotData), paste(rep("; g = ", nrow(vec1)), round(gVec, 3), sep=""), sep="")
+  } else {
+    hoverText <- row.names(plotData)
+  }
+  
+  p <- ggplot(plotData, aes(x=x.axis, y=y.axis, color=prior, text=hoverText)) + 
     geom_point(shape=1, size=0.9) + xlab('Model 1 R^2') + ylab('Difference between model 2 and model 3 R^2') + 
     ggtitle("Comparison of Empirical Bayes R^2 Values") + theme_light() + theme(legend.position="none")
   if(colorPriors == TRUE) {
