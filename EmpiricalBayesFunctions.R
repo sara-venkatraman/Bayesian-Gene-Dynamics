@@ -246,21 +246,21 @@ Compute.R2.Matrices <- function(genesSubset, bayes=TRUE) {
           Y1 <- Get.Gene.Data.As.Vector(gene1)
           Y2 <- Get.Gene.Data.As.Vector(gene2)
           
-          # Find optimal value of g for both orderings of the gene pair
+          # Set prior mean
           if(gene1 %in% rownames(priorMatrix) && gene2 %in% rownames(priorMatrix)) {
-            if(priorMatrix[gene1, gene2] == 1) { priorMean <- c(1,1,0,0,0) }
-            else { priorMean <- c(0,0,0,0,0) }
+            if(priorMatrix[gene1, gene2] == 1) { priorMean1 <- c(1,1,0,0,0);  priorMean2 <- c(1,1,0,0,0) }
+            else if(priorMatrix[gene1, gene2] == 2) { priorMean1 <- c(2,2,0,0,0);  priorMean2 <- c(1/2,1/2,0,0,0) }
+            else { priorMean1 <- c(0,0,0,0,0);  priorMean2 <- c(0,0,0,0,0) }
           }
-          else { priorMean <- c(0,0,0,0,0) }
+          else { priorMean1 <- c(0,0,0,0,0);  priorMean2 <- c(0,0,0,0,0) }
           
           # Compute R^2 values for both orderings of the gene pair
-          R2.1 <- Compute.Gene.Pair.R2.Bayes(gene1, gene2)
-          R2.2 <- Compute.Gene.Pair.R2.Bayes(gene2, gene1)
+          R2.1 <- Compute.Gene.Pair.R2.Bayes(gene1, gene2, priorMean=priorMean1)
+          R2.2 <- Compute.Gene.Pair.R2.Bayes(gene2, gene1, priorMean=priorMean2)
         }
         else {
           R2.1 <- Compute.Gene.Pair.R2(gene1, gene2)
           R2.2 <- Compute.Gene.Pair.R2(gene2, gene1)
-          # g1 <- 1;  g2 <- 1;
         }
         
         if(R2.1$R2Model2-R2.1$R2Model3 > R2.2$R2Model2-R2.2$R2Model3) {
@@ -268,13 +268,11 @@ Compute.R2.Matrices <- function(genesSubset, bayes=TRUE) {
           R2Model2 <- R2.1$R2Model2
           R2Model3 <- R2.1$R2Model3
           g <- R2.1$g
-          # g <- g1
         } else {
           R2Model1 <- R2.2$R2Model1
           R2Model2 <- R2.2$R2Model2
           R2Model3 <- R2.2$R2Model3
           g <- R2.2$g
-          # g <- g2
         }
         
         # Fill in upper-triangular entries of similarity matrices
