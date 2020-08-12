@@ -1,4 +1,4 @@
-# --- Script 3: Function definitions ---
+# --- Script 4: Function definitions ---
 
 # To use the functions in this script, the following objects need to have already been constructed.
 # Examples of how to construct these objects from raw data are in DatasetConstruction.R, and examples

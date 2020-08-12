@@ -1,10 +1,10 @@
 # --- Script 5: Exploratory data analysis ---
 
 # Load datasets needed for constructing priors
-source("DatasetLoader.R")
+source("2_DatasetLoader.R")
 
 # Load functions in EmpiricalBayesFunctions.R
-source("EmpiricalBayesFunctions.R")
+source("3_EmpiricalBayesFunctions.R")
 
 # Before running code below, also need to run the relevant section of PriorConstruction.R.
 
@@ -33,6 +33,7 @@ Draw.Metric.Scatterplot.For.Binary.Prior(bayesR2Matrices, bayes=TRUE, colorPrior
 Draw.Metric.Scatterplot.For.Binary.Prior(bayesR2Matrices, bayes=TRUE, colorPriors=TRUE)
 
 # Non-interactive plots for presentation purposes
+library(latex2exp)
 par(mai=c(1.05,1.05,1.05,1.05))
 plot(nonBayesVec1, nonBayesVec2-nonBayesVec3, cex=0.7, 
      col=ifelse(nonBayesR2MatricesVec$priorVector > 0, "red","navy"), 
@@ -41,7 +42,7 @@ plot(nonBayesVec1, nonBayesVec2-nonBayesVec3, cex=0.7,
 plot(bayesVec1, abs(bayesVec2-bayesVec3), cex=0.7, col=ifelse(bayesR2MatricesVec$priorVector > 0, "red", "navy"), 
      xlab=TeX("Model 1 $R^2$"), ylab=TeX("Difference of lead-lag and model 2 $R^2$"),
      main=TeX("Comparison of $R^2$ (Bayesian regression)"))
-upperRightNonBayes <- rownames(nonBayesVec1)[nonBayesVec1 > 0.65 & (nonBayesVec2-nonBayesVec3) > 0.5]
+upperRightNonBayes <- rownames(nonBayesVec1)[nonBayesVec1 > 0.65 & (nonBayesVec2-nonBayesVec3) > 0.1]
 upperRightBayes <- rownames(bayesVec1)[bayesVec1 > 0.5 & (bayesVec2-bayesVec3) > 0.4]
 
 par(mfrow=c(1,3))

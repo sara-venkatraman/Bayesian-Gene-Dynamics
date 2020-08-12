@@ -1,10 +1,10 @@
-# --- Script 4: Prior matrix construction ---
+# --- Script 3: Prior matrix construction ---
 
 # Load datasets needed for constructing priors
-source("DatasetLoader.R")
+source("2_DatasetLoader.R")
 
 # Load functions in EmpiricalBayesFunctions.R
-source("EmpiricalBayesFunctions.R")
+source("4_EmpiricalBayesFunctions.R")
 
 # --- 1. Construct prior matrix from full STRING-DB scores ---
 
