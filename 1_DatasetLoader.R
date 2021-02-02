@@ -1,0 +1,50 @@
+# --- Script 2: Read data and generate a subset of genes ---
+
+# "Processed Data for Clustering" contains the following subdirectories. The files
+# in each subdirectory have the same names.
+# - "/Differentially-Expressed/" contains gene expression data for differentially-expressed 
+#   genes identified in Schlamp et al., 2020
+# - "/Neighbors (STRING > 950)/" contains gene expression data for the "neighbors" of the 
+#   differentially-expressed genes, i.e. genes that have a composite STRING score of at least
+#   950 with at least one differentially-expressed gene
+# - "/Combined Genes/" contains the union of the genes in the previous two directories.
+
+# Set subset size
+subsetSize <- 200
+
+# If using the combined set of genes (differentially-expressed and neighbors), set
+# the desired proportion of each set to use
+DEsubsetProp <- 0.6
+neighborSubsetProp <- 1 - DEsubsetProp
+
+# Set the desired subdirectory:
+subdirectory <- "Differentially-Expressed"
+
+# Read gene names and Flybase IDs and format them as character vectors
+geneNames <- read.csv(paste("../Processed Data/", subdirectory, "/GeneNames.csv", sep=""), header=T)
+geneIDs <- read.csv(paste("../Processed Data/", subdirectory, "/GeneIDs.csv", sep=""), header=T)  
+geneNames <- as.character(geneNames[,1])
+geneIDs <- as.character(geneIDs[,1])
+
+# Dataframe of expression measurements (as log_2 fold change) 
+geneData <- read.csv(paste("../Processed Data/", subdirectory, "/LogChange.csv", sep=""), row.names=1)
+
+# (If desired) dataframes of normalized counts from two replicates
+# normCountsRep1 <- read.csv(paste("../Processed Data/", subdirectory, "/NormCountsRep1.csv", sep=""), row.names=1)
+# normCountsRep2 <- read.csv(paste("../Processed Data/", subdirectory, "/NormCountsRep2.csv", sep=""), row.names=1)
+
+# Read prior matrix
+priorMatrix <- read.csv(paste("../Processed Data/", subdirectory, "/PriorMatrix.csv", sep=""), row.names=1)
+rownames(priorMatrix) <- geneNames;  colnames(priorMatrix) <- geneNames
+
+# --- Subset selection ---
+
+if(subdirectory == "Combined Genes") {
+  DEgeneNames <- read.csv("../Processed Data/Differentially-Expressed/GeneNames.csv")[,1]
+  neighborGeneNames <- read.csv("../Processed Data/Neighbors (STRING > 950)/GeneNames.csv")[,1]
+  DEsubset <- as.character(sample(DEgeneNames, size=DEsubsetProp*subsetSize))
+  neighborSubset <- as.character(sample(neighborGeneNames, size=neighborSubsetProp*subsetSize))
+  genesSubset <- unique(c(DEsubset, neighborSubset)) # There should be no duplicates anyway
+} else {
+  genesSubset <- as.character(sample(geneNames, size=subsetSize))
+}

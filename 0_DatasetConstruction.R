@@ -68,12 +68,26 @@ write.csv(stringDBMatrix, file="Dme_STRING_exp_matrix.csv")
 # identified by composite STRING-DB scores. To run this code, first run the functions 
 # Gene.Name.To.Flybase.ID and Flybase.ID.To.Gene.Name in EmpiricalBayesFunctions.R.
 
+# Returns the Flybase ID of a given gene name
+Gene.Name.To.Flybase.ID <- function(geneName) {
+  index <- match(geneName, geneNames)
+  flybaseID <- geneIDs[index]
+  return(flybaseID)
+}
+
+# Returns the gene name of a given Flybase ID
+Flybase.ID.To.Gene.Name <- function(geneID) {
+  index <- match(geneID, geneIDs)
+  geneName <- geneNames[index]
+  return(geneName)
+}
+
 # Read gene names and Flybase IDs (converted to character) and read composite STRING scores
-geneNames <- read.csv("../Processed Data for Clustering/DEgeneNames.csv", header=T)
-geneIDs <- read.csv("../Processed Data for Clustering/DEgeneIDs.csv", header=T)  
+geneNames <- read.csv("../Processed Data/Differentially-Expressed/GeneNames.csv", header=T)
+geneIDs <- read.csv("../Processed Data/Differentially-Expressed/GeneIDs.csv", header=T)  
 geneNames <- as.character(geneNames$geneName)
 geneIDs <- as.character(geneIDs$geneID)
-stringDBMatrix <- read.csv("../Drosophila Data (Processed)/Dme_STRING_matrix.csv", header=T, row.names=1)
+stringDBMatrix <- read.csv("../Processed Data/Prior Matrices/Dme_STRING_matrix.csv", header=T, row.names=1)
 
 # Initialize vector for storing names of neighbors not in the DE gene set and the number
 # of new additions (i.e. length of DEgenesNeighbors)
@@ -92,7 +106,7 @@ for(i in 1:length(geneNames)) {
     STRINGscores <- stringDBMatrix[index,]
     
     # Find the column indices of genes scores above some threshold
-    associatedIndices <- which(STRINGscores >= 900)
+    associatedIndices <- which(STRINGscores >= 950)
     associatedIDs <- colnames(stringDBMatrix)[associatedIndices]
     
     # Find which of the associated genes are already in the set of DE genes
@@ -140,11 +154,11 @@ neighborsNormCountsRep1 <- geneDataNewNeighbors[, 75:95]
 neighborsNormCountsRep2 <- geneDataNewNeighbors[, 96:115] # Missing time point 4
 
 # Write CSV files for log-fold changes, two replicates, gene names, and gene IDs
-write.csv(neighborsLogChange, "../Processed Data for Clustering/DEneighbors900LogChange.csv")
-write.csv(neighborsNormCountsRep1, "../Processed Data for Clustering/DEneighbors900normCountsRep1.csv")
-write.csv(neighborsNormCountsRep2, "../Processed Data for Clustering/DEneighbors900normCountsRep2.csv")
-write.csv(geneDataNewNeighbors$gene_name, "../Processed Data for Clustering/DEneighbors900geneNames.csv", row.names=F)
-write.csv(geneDataNewNeighbors$gene_ID, "../Processed Data for Clustering/DEneighbors900geneIDs.csv", row.names=F)
+write.csv(neighborsLogChange, "../Processed Data/DEneighbors950LogChange.csv")
+write.csv(neighborsNormCountsRep1, "../Processed Data/DEneighbors950normCountsRep1.csv")
+write.csv(neighborsNormCountsRep2, "../Processed Data/DEneighbors950normCountsRep2.csv")
+write.csv(geneDataNewNeighbors$gene_name, "../Processed Data/DEneighbors950geneNames.csv", row.names=F)
+write.csv(geneDataNewNeighbors$gene_ID, "../Processed Data/DEneighbors950geneIDs.csv", row.names=F)
 
 # ------------------------------------------------------------------
 
@@ -153,24 +167,27 @@ write.csv(geneDataNewNeighbors$gene_ID, "../Processed Data for Clustering/DEneig
 # identified by STRING-DB
 
 # Read data for DE genes 
-DElogChange <- read.csv("../Processed Data for Clustering/DElogChange.csv")
-DEnormCountsRep1 <- read.csv("../Processed Data for Clustering/DEnormCountsRep1.csv")
-DEnormCountsRep2 <- read.csv("../Processed Data for Clustering/DEnormCountsRep2.csv")
-DEnames <- read.csv("../Processed Data for Clustering/DEgeneNames.csv")
-DEids <- read.csv("../Processed Data for Clustering/DEgeneIDs.csv")
+DElogChange <- read.csv("../Processed Data/Differentially-Expressed/LogChange.csv")
+DEnormCountsRep1 <- read.csv("../Processed Data/Differentially-Expressed/NormCountsRep1.csv")
+DEnormCountsRep2 <- read.csv("../Processed Data/Differentially-Expressed/NormCountsRep2.csv")
+DEnames <- read.csv("../Processed Data/Differentially-Expressed/GeneNames.csv")
+DEids <- read.csv("../Processed Data/Differentially-Expressed/GeneIDs.csv")
 
 # Read data for DE gene neighbors
-neighborsLogChange <- read.csv("../Processed Data for Clustering/DEneighbors900LogChange.csv")
-neighborsNormCountsRep1 <- read.csv("../Processed Data for Clustering/DEneighbors900normCountsRep1.csv")
-neighborsNormCountsRep2 <- read.csv("../Processed Data for Clustering/DEneighbors900normCountsRep2.csv")
-neighborsNames <- read.csv("../Processed Data for Clustering/DEneighbors900geneNames.csv")
-neighborsIDs <- read.csv("../Processed Data for Clustering/DEneighbors900geneIDs.csv")
+neighborsLogChange <- read.csv("../Processed Data/Neighbors (STRING > 950)/LogChange.csv")
+neighborsNormCountsRep1 <- read.csv("../Processed Data/Neighbors (STRING > 950)/NormCountsRep1.csv")
+neighborsNormCountsRep2 <- read.csv("../Processed Data/Neighbors (STRING > 950)/NormCountsRep2.csv")
+neighborsNames <- read.csv("../Processed Data/Neighbors (STRING > 950)/GeneNames.csv")
+neighborsIDs <- read.csv("../Processed Data/Neighbors (STRING > 950)/GeneIDs.csv")
 
 # First combine gene names from both sets and save alphabetical ordering
+colnames(DEnames) <- "geneName";  colnames(neighborsNames) <- "geneName"
 combinedNames <- rbind(DEnames, neighborsNames)
 ordering <- order(combinedNames)
 
 # Combine remaining datasets
+colnames(DEids) <- "geneID";  colnames(neighborsIDs) <- "geneID"
+colnames(DElogChange)[1] <- "geneName";  colnames(neighborsLogChange)[1] <- "geneName" 
 combinedIDs <- rbind(DEids, neighborsIDs)
 combinedLogChange <- rbind(DElogChange, neighborsLogChange)
 combinedNormCountsRep1 <- rbind(DEnormCountsRep1, neighborsNormCountsRep1)
@@ -194,8 +211,38 @@ combinedNormCountsRep1 <- combinedNormCountsRep1[,-1]
 combinedNormCountsRep2 <- combinedNormCountsRep2[,-1]
 
 # Write CSVs
-write.csv(combinedLogChange, "../Processed Data for Clustering/CombinedLogChange.csv")
-write.csv(combinedNormCountsRep1, "../Processed Data for Clustering/CombinedNormCountsRep1.csv")
-write.csv(combinedNormCountsRep2, "../Processed Data for Clustering/CombinedNormCountsRep2.csv")
-write.csv(combinedNames$geneName, "../Processed Data for Clustering/CombinedGeneNames.csv", row.names=F)
-write.csv(combinedIDs$geneID, "../Processed Data for Clustering/CombinedGeneIDs.csv", row.names=F)
+write.csv(combinedLogChange, "../Processed Data/CombinedLogChange.csv")
+write.csv(combinedNormCountsRep1, "../Processed Data/CombinedNormCountsRep1.csv")
+write.csv(combinedNormCountsRep2, "../Processed Data/CombinedNormCountsRep2.csv")
+write.csv(combinedNames$geneName, "../Processed Data/CombinedGeneNames.csv", row.names=F)
+write.csv(combinedIDs$geneID, "../Processed Data/CombinedGeneIDs.csv", row.names=F)
+
+# --- Create a prior information matrix just for the genes in the combined dataset ---
+
+stringDBMatrix <- read.csv("../Processed Data/Prior Matrices/Dme_STRING_matrix.csv", header=T, row.names=1)
+geneData <- read.csv("../Processed Data/Combined Genes/LogChange.csv", row.names=1)
+geneIDs <- read.csv("../Processed Data/Combined Genes/GeneIDs.csv")[,1]
+geneNames <- read.csv("../Processed Data/Combined Genes/GeneNames.csv")[,1]
+riorMatrix <- matrix(0L, nrow(geneData), nrow(geneData))
+rownames(priorMatrix) <- geneIDs;  colnames(priorMatrix) <- geneIDs
+availableStringPrior <- as.matrix(stringDBMatrix[geneIDs[geneIDs %in% rownames(stringDBMatrix)], geneIDs[geneIDs %in% rownames(stringDBMatrix)]])
+availableStringPrior[is.na(availableStringPrior)] <- 0
+priorMatrix[geneIDs[geneIDs %in% rownames(stringDBMatrix)], geneIDs[geneIDs %in% rownames(stringDBMatrix)]] <- availableStringPrior
+priorMatrix[priorMatrix <= 500] <- 0
+rownames(priorMatrix) <- geneNames;  colnames(priorMatrix) <- geneNames
+write.csv(priorMatrix, "../Processed Data/Prior Matrices/CombinedGenesPriorMatrix.csv")
+
+# --- Create a prior information matrix just for the genes in the DE dataset ---
+
+stringDBMatrix <- read.csv("../Processed Data/Prior Matrices/Dme_STRING_matrix.csv", header=T, row.names=1)
+geneData <- read.csv("../Processed Data/Differentially-Expressed/LogChange.csv", row.names=1)
+geneIDs <- read.csv("../Processed Data/Differentially-Expressed/GeneIDs.csv")[,1]
+geneNames <- read.csv("../Processed Data/Differentially-Expressed/GeneNames.csv")[,1]
+priorMatrix <- matrix(0L, nrow(geneData), nrow(geneData))
+rownames(priorMatrix) <- geneIDs;  colnames(priorMatrix) <- geneIDs
+availableStringPrior <- as.matrix(stringDBMatrix[geneIDs[geneIDs %in% rownames(stringDBMatrix)], geneIDs[geneIDs %in% rownames(stringDBMatrix)]])
+availableStringPrior[is.na(availableStringPrior)] <- 0
+priorMatrix[geneIDs[geneIDs %in% rownames(stringDBMatrix)], geneIDs[geneIDs %in% rownames(stringDBMatrix)]] <- availableStringPrior
+priorMatrix[priorMatrix <= 500] <- 0
+rownames(priorMatrix) <- geneNames;  colnames(priorMatrix) <- geneNames
+write.csv(priorMatrix, "../Processed Data/Prior Matrices/DEPriorMatrix.csv")
