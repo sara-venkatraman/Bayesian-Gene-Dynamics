@@ -1,7 +1,7 @@
 # --- Script 2: Non-Bayesian lead-lag R^2 computations ---
 
 # Requirements: Run the script "1_DatasetLoader.R" first.
-# Timing: ~2.17 minutes for 951 genes, 3.20 minutes for 1735 genes
+# Timing: 3.56 seconds for 156 genes, 54.49 seconds for 951 genes, 3.20 minutes for 1735 genes
 
 library(parallel)
 
@@ -11,9 +11,6 @@ startTime <- Sys.time()
 # Format gene expression dataframe into a list (produces one list element
 # per row of the dataframe)
 geneDataList <- as.list(as.data.frame(t(geneData)))
-
-# Define the hours corresponding to each time point in the dataset
-hours <- c(0, 1, 2, 4, 5, 6, 8, 10, 12, 14, 16, 20, 24, 30, 36, 42, 48)
 
 # Define function for spline integrations
 intLowerBound <- head(hours, -1)
@@ -107,7 +104,9 @@ colnames(nonBayesLLR2Mat.own) <- rownames(nonBayesLLR2Mat.own) <- names(geneData
 # Stop timer and print runtime
 Sys.time() - startTime
 
-
-
+# Write R^2 similarity matrices to CSV, if desired
+write.csv(nonBayesLLR2Mat, "LLR2.csv")
+write.csv(nonBayesLLR2Mat.other, "LLR2_other.csv")
+write.csv(nonBayesLLR2Mat.own, "LLR2_own.csv")
 
 

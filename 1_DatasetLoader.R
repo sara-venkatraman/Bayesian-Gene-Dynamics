@@ -1,4 +1,4 @@
-# --- Script 2: Read data and generate a subset of genes ---
+# --- Script 1: Read data and generate a subset of genes ---
 
 # "Processed Data for Clustering" contains the following subdirectories. The files
 # in each subdirectory have the same names.
@@ -29,6 +29,9 @@ geneIDs <- as.character(geneIDs[,1])
 # Dataframe of expression measurements (as log_2 fold change) 
 geneData <- read.csv(paste("../Processed Data/", subdirectory, "/LogChange.csv", sep=""), row.names=1)
 
+# Define the hours corresponding to each time point in the dataset
+hours <- c(0, 1, 2, 4, 5, 6, 8, 10, 12, 14, 16, 20, 24, 30, 36, 42, 48)
+
 # (If desired) dataframes of normalized counts from two replicates
 # normCountsRep1 <- read.csv(paste("../Processed Data/", subdirectory, "/NormCountsRep1.csv", sep=""), row.names=1)
 # normCountsRep2 <- read.csv(paste("../Processed Data/", subdirectory, "/NormCountsRep2.csv", sep=""), row.names=1)
@@ -44,7 +47,7 @@ if(subdirectory == "Combined Genes") {
   neighborGeneNames <- read.csv("../Processed Data/Neighbors (STRING > 950)/GeneNames.csv")[,1]
   DEsubset <- as.character(sample(DEgeneNames, size=DEsubsetProp*subsetSize))
   neighborSubset <- as.character(sample(neighborGeneNames, size=neighborSubsetProp*subsetSize))
-  genesSubset <- unique(c(DEsubset, neighborSubset)) # There should be no duplicates anyway
+  geneSubset <- unique(c(DEsubset, neighborSubset)) # There should be no duplicates anyway
 } else {
-  genesSubset <- as.character(sample(geneNames, size=subsetSize))
+  geneSubset <- as.character(sample(geneNames, size=subsetSize))
 }

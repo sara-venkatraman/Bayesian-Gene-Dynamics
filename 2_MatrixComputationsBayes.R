@@ -4,15 +4,13 @@
 # Timing: 2.58 minutes for 951 genes, 21.8 minutes for 1735 genes
 
 library(parallel)
+# options(mc.cores = 3L)
 
 # Start the timer for this script
 startTime <- Sys.time()
 
 # Format gene data into a list
 geneDataList <- as.list(as.data.frame(t(geneData)))
-
-# Define the hours corresponding to each time point in the dataset
-hours <- c(0, 1, 2, 4, 5, 6, 8, 10, 12, 14, 16, 20, 24, 30, 36, 42, 48)
 
 # Define function for spline integrations
 intLowerBound <- head(hours, -1)
@@ -131,5 +129,3 @@ colnames(bayesLLR2Mat.own) <- rownames(bayesLLR2Mat.own) <- names(geneDataList)
 
 # Stop timer and print runtime
 Sys.time() - startTime
-
-
