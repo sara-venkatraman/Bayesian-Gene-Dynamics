@@ -253,7 +253,7 @@ write.csv(priorMatrix, "../Processed Data/Prior Matrices/DEPriorMatrix.csv")
 # 1 = one of the two sources indicates an association
 # 2 = both sources indicate association
 
-subdirectory <- "Differentially-Expressed"
+subdirectory <- "Combined Genes"
 
 stringDBMatrix <- read.csv("../Processed Data/Prior Matrices/Dme_STRING_matrix.csv", header=T, row.names=1)
 geneData <- read.csv(paste("../Processed Data/", subdirectory, "/LogChange.csv", sep=""), row.names=1)
@@ -273,16 +273,13 @@ priorMatrixString[priorMatrixString <= 500] <- 0
 # Next get the prior from the replicate data (average of correlations from 
 # the two replicates of normalized counts)
 priorMatrixRep <- (cor(t(normCountsRep1)) + cor(t(normCountsRep2)))/2
-priorMatrixRep[abs(priorMatrixRep) < 0.80] <- 0
+priorMatrixRep[abs(priorMatrixRep) < 0.8] <- 0
 
-# Combine the priors (1 = associated, 0 = unknown, -1 = not associated)
+# Combine the priors (1 = associated, NA = unknown, 0 = not associated)
 priorMatrix <- (priorMatrixRep != 0) + 0      # Store 1's from replicate data
 priorMatrix[priorMatrixString > 0] <- 1       # Store 1's from STRING scores
 priorMatrix[is.na(priorMatrixString)] <- NA   # Replace STRING unknowns with NA
 rownames(priorMatrix) <- geneNames;  colnames(priorMatrix) <- geneNames
-
-# priorMatrix[priorMatrix == 0] <- -1           # Change 0 to -1 for not associated
-# priorMatrix[is.na(priorMatrix)] <- 0    # Replace STRING unknowns with NA
 
 # Combine the priors (equal weight)
 # priorMatrix <- ((priorMatrixString != 0) + 0) + ((priorMatrixRep != 0) + 0)

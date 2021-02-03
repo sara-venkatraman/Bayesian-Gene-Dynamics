@@ -9,16 +9,8 @@
 #   950 with at least one differentially-expressed gene
 # - "/Combined Genes/" contains the union of the genes in the previous two directories.
 
-# Set subset size
-subsetSize <- 170
-
-# If using the combined set of genes (differentially-expressed and neighbors), set
-# the desired proportion of each set to use
-DEsubsetProp <- 0.6
-neighborSubsetProp <- 1 - DEsubsetProp
-
 # Set the desired subdirectory:
-subdirectory <- "Differentially-Expressed"
+subdirectory <- "Combined Genes"
 
 # Read gene names and Flybase IDs and format them as character vectors
 geneNames <- read.csv(paste("../Processed Data/", subdirectory, "/GeneNames.csv", sep=""), header=T)
@@ -41,6 +33,14 @@ priorMatrix <- read.csv(paste("../Processed Data/", subdirectory, "/PriorMatrix.
 rownames(priorMatrix) <- geneNames;  colnames(priorMatrix) <- geneNames
 
 # --- Subset selection ---
+
+# Set subset size
+subsetSize <- 150
+
+# If using the combined set of genes (differentially-expressed and neighbors), set
+# the desired proportion of each set to use
+DEsubsetProp <- 0.6
+neighborSubsetProp <- 1 - DEsubsetProp
 
 if(subdirectory == "Combined Genes") {
   DEgeneNames <- read.csv("../Processed Data/Differentially-Expressed/GeneNames.csv")[,1]

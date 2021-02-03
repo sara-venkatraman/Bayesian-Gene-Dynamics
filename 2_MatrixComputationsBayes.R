@@ -51,33 +51,25 @@ Get.R2.Bayes <- function(x, y, prior) {
   n <- nrow(x)
   p <- ncol(x)
   
-  # Get first two columns of x
-  x12 <- x[,1] + x[,2]
-
   # Fit the three models
   LLR2model <- lm.fit(x, y)
   LLR2model.other <- lm.fit(x[,c(1,2,5)], y)
   LLR2model.own <- lm.fit(x[,3:5], y)
   
   # Set prior mean of regression coefficients
-  # if(is.na(prior))
-  #   priorMean <- matrix(0, nrow=5, ncol=1)
-  # else
-  #   priorMean <- matrix(c(prior > 0, prior > 0, 0, 0, 0), ncol=1)
-  
+  if(is.na(prior))
+    priorMean <- matrix(0, nrow=5, ncol=1)
+  else
+    priorMean <- matrix(c(prior > 0, prior > 0, 0, 0, 0), ncol=1)
+
   # Compute first LLR2
   LScoefs <- matrix(LLR2model$coefficients, ncol=1)
   LSfit <- matrix(LLR2model$fitted.values, ncol=1)
   if(is.na(prior) || prior > 0) {
     sigmaSq <- norm(y - LSfit, "2")^2 / (n-p)
-    xi <- ((t(y) %*% x12)/norm(x12, "2")^2)[1]
-    g <- ((norm(LSfit, "2")^2 * norm(x12, "2")^2 - (t(y) %*% x12)^2)/(norm(x12, "2")^2 * p * sigmaSq) - 1)[1]
-    priorMean <- matrix(c(xi, xi, 0, 0, 0), ncol=1)
-    # g <- ((norm(LSfit - x %*% priorMean,"2")^2 - p*sigmaSq) / (p*sigmaSq))[1]
-  } else {
+    g <- ((norm(LSfit - x %*% priorMean,"2")^2 - p*sigmaSq) / (p*sigmaSq))[1]
+  } else
     g <- 1
-    priorMean <- matrix(0, nrow=5, ncol=1)
-  }
   posteriorMean <- (1/(1+g))*priorMean + (g/(1+g))*LScoefs
   posteriorFit <- x %*% posteriorMean
   LLR2 <- var(posteriorFit)/(var(posteriorFit) + var(y-posteriorFit))
@@ -87,31 +79,22 @@ Get.R2.Bayes <- function(x, y, prior) {
   LSfit <- matrix(LLR2model.other$fitted.values, ncol=1)
   if(is.na(prior) || prior > 0) {
     sigmaSq <- norm(y - LSfit, "2")^2 / (n-p)
-    xi <- ((t(y) %*% x12)/norm(x12, "2")^2)[1]
-    g <- ((norm(LSfit, "2")^2 * norm(x12, "2")^2 - (t(y) %*% x12)^2)/(norm(x12, "2")^2 * p * sigmaSq) - 1)[1]
-    priorMean <- matrix(c(xi, xi, 0), ncol=1)
-    # g <- ((norm(LSfit - x[,c(1,2,5)] %*% priorMean[c(1,2,5),],"2")^2 - p*sigmaSq) / (p*sigmaSq))[1]  
-  } else {
+    g <- ((norm(LSfit - x[,c(1,2,5)] %*% priorMean[c(1,2,5),],"2")^2 - p*sigmaSq) / (p*sigmaSq))[1]
+  } else
     g <- 1
-    priorMean <- matrix(0, nrow=3, ncol=1)
-  }
-  posteriorMean <- (1/(1+g))*priorMean + (g/(1+g))*LScoefs
-  # posteriorMean <- (1/(1+g))*priorMean[c(1,2,5),] + (g/(1+g))*LScoefs
+  posteriorMean <- (1/(1+g))*priorMean[c(1,2,5),] + (g/(1+g))*LScoefs
   posteriorFit <- x[,c(1,2,5)] %*% posteriorMean
   LLR2.other <- var(posteriorFit)/(var(posteriorFit) + var(y-posteriorFit))
 
   # Compute LLR2.own
   LScoefs <- matrix(LLR2model.own$coefficients, ncol=1)
   LSfit <- matrix(LLR2model.own$fitted.values, ncol=1)
-  priorMean <- matrix(0, nrow=3, ncol=1)
   if(is.na(prior) || prior > 0) {
     sigmaSq <- norm(y - LSfit, "2")^2 / (n-p)
-    g <- ((norm(LSfit - x[,3:5] %*% priorMean,"2")^2 - p*sigmaSq) / (p*sigmaSq))[1]  
-    # g <- ((norm(LSfit - x[,3:5] %*% priorMean[3:5,],"2")^2 - p*sigmaSq) / (p*sigmaSq))[1]  
+    g <- ((norm(LSfit,"2")^2 - p*sigmaSq) / (p*sigmaSq))[1]
   } else
     g <- 1
-  posteriorMean <- (1/(1+g))*priorMean + (g/(1+g))*LScoefs
-  # posteriorMean <- (1/(1+g))*priorMean[3:5,] + (g/(1+g))*LScoefs
+  posteriorMean <- (g/(1+g))*LScoefs
   posteriorFit <- x[,3:5] %*% posteriorMean
   LLR2.own <- var(posteriorFit)/(var(posteriorFit) + var(y-posteriorFit))
 
@@ -159,3 +142,8 @@ colnames(bayesLLR2Mat.own) <- rownames(bayesLLR2Mat.own) <- names(geneDataList)
 
 # Stop timer and print runtime
 Sys.time() - startTime
+
+# Write R^2 similarity matrices to CSV, if desired
+write.csv(bayesLLR2Mat, "../Processed Data/R-Squared Matrices/BayesLLR2.csv")
+write.csv(bayesLLR2Mat.other, "../Processed Data/R-Squared Matrices/BayesLLR2_Other.csv")
+write.csv(bayesLLR2Mat.own, "../Processed Data/R-Squared Matrices/BayesLLR2_Own.csv")
