@@ -34,9 +34,10 @@ dev.off(); par(mfrow=c(1,1))
 
 # --- R^2 scatterplots ---
 
+Draw.R2.Scatterplot(matrix1=nonBayesLLR2Mat.other, matrix2=nonBayesLLR2Mat - nonBayesLLR2Mat.own, 
+                    geneSubset=geneSubset)
+
 Draw.R2.Scatterplot(bayesLLR2Mat.other, bayesLLR2Mat - bayesLLR2Mat.own, 
                     priorMatrix, geneSubset)
 
-Draw.R2.Scatterplot(matrix1=nonBayesLLR2Mat.other, matrix2=nonBayesLLR2Mat - nonBayesLLR2Mat.own, 
-                    geneSubset=geneSubset)
 

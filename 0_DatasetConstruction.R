@@ -246,3 +246,36 @@ priorMatrix[geneIDs[geneIDs %in% rownames(stringDBMatrix)], geneIDs[geneIDs %in%
 priorMatrix[priorMatrix <= 500] <- 0
 rownames(priorMatrix) <- geneNames;  colnames(priorMatrix) <- geneNames
 write.csv(priorMatrix, "../Processed Data/Prior Matrices/DEPriorMatrix.csv")
+
+# --- Create a prior information matrix for DE genes with entries 0,1,2 ---
+
+# 0 = neither STRING nor replicate data agrees that there's an association
+# 1 = one of the two sources indicates an association
+# 2 = both sources indicate association
+
+subdirectory <- "Combined Genes"
+
+stringDBMatrix <- read.csv("../Processed Data/Prior Matrices/Dme_STRING_matrix.csv", header=T, row.names=1)
+geneData <- read.csv(paste("../Processed Data/", subdirectory, "/LogChange.csv", sep=""), row.names=1)
+geneIDs <- read.csv(paste("../Processed Data/", subdirectory, "/GeneIDs.csv", sep=""))[,1]
+geneNames <- read.csv(paste("../Processed Data/", subdirectory, "/GeneNames.csv", sep=""))[,1]
+normCountsRep1 <- read.csv(paste("../Processed Data/", subdirectory, "/NormCountsRep1.csv", sep=""), row.names=1)
+normCountsRep2 <- read.csv(paste("../Processed Data/", subdirectory, "/NormCountsRep2.csv", sep=""), row.names=1)
+
+# First get the prior from STRING
+priorMatrixString <- matrix(0L, nrow(geneData), nrow(geneData))
+rownames(priorMatrixString) <- geneIDs;  colnames(priorMatrixString) <- geneIDs
+availableStringPrior <- as.matrix(stringDBMatrix[geneIDs[geneIDs %in% rownames(stringDBMatrix)], geneIDs[geneIDs %in% rownames(stringDBMatrix)]])
+availableStringPrior[is.na(availableStringPrior)] <- 0
+priorMatrixString[geneIDs[geneIDs %in% rownames(stringDBMatrix)], geneIDs[geneIDs %in% rownames(stringDBMatrix)]] <- availableStringPrior
+priorMatrixString[priorMatrixString <= 500] <- 0
+
+# Next get the prior from the replicate data (average of correlations from 
+# the two replicates of normalized counts)
+priorMatrixRep <- (cor(t(normCountsRep1)) + cor(t(normCountsRep2)))/2
+priorMatrixRep[abs(priorMatrixRep) < 0.85] <- 0
+
+# Combine the priors
+priorMatrix <- ((priorMatrixString != 0) + 0) + ((priorMatrixRep != 0) + 0)
+rownames(priorMatrix) <- geneNames;  colnames(priorMatrix) <- geneNames
+write.csv(priorMatrix, "../Processed Data/Differentially-Expressed/PriorMatrix.csv")
