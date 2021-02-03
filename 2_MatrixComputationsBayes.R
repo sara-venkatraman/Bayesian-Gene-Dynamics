@@ -76,13 +76,13 @@ Get.R2.Bayes <- function(x, y, prior) {
   LScoefs <- matrix(LLR2model.reverse$coefficients, ncol=1)
   LSfit <- matrix(LLR2model.reverse$fitted.values, ncol=1)
   if(prior > 0) {
-    sigmaSq <- norm(y - LSfit, "2")^2 / (n-p)
-    g <- ((norm(LSfit - x %*% priorMean,"2")^2 - p*sigmaSq) / (p*sigmaSq))[1]
+    sigmaSq <- norm(y.reverse - LSfit, "2")^2 / (n-p)
+    g <- ((norm(LSfit - x.reverse %*% priorMean,"2")^2 - p*sigmaSq) / (p*sigmaSq))[1]
   } else
     g <- 1
   posteriorMean <- (1/(1+g))*priorMean + (g/(1+g))*LScoefs
-  posteriorFit <- x %*% posteriorMean
-  LLR2.BA <- var(posteriorFit)/(var(posteriorFit) + var(y-posteriorFit))
+  posteriorFit <- x.reverse %*% posteriorMean
+  LLR2.BA <- var(posteriorFit)/(var(posteriorFit) + var(y.reverse-posteriorFit))
 
   # Check which LLR2 was larger; use this to determine which gene is 
   # A and which is B for remaining computations
