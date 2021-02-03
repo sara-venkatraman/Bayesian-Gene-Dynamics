@@ -10,7 +10,7 @@
 # - "/Combined Genes/" contains the union of the genes in the previous two directories.
 
 # Set subset size
-subsetSize <- 200
+subsetSize <- 170
 
 # If using the combined set of genes (differentially-expressed and neighbors), set
 # the desired proportion of each set to use

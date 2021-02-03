@@ -50,74 +50,68 @@ Get.R2.Bayes <- function(x, y, prior) {
   # Get dimensions of design matrix x
   n <- nrow(x)
   p <- ncol(x)
+  
+  # Get first two columns of x
+  x12 <- x[,1] + x[,2]
 
-  # Fit both versions of the LLR2 model (regress A on B, and then B on A)
-  x.reverse <- cbind(y, x[,3], x[,2], x[,4:5])
-  y.reverse <- x[,1]
+  # Fit the three models
   LLR2model <- lm.fit(x, y)
-  LLR2model.reverse <- lm.fit(x.reverse, y.reverse)
-
+  LLR2model.other <- lm.fit(x[,c(1,2,5)], y)
+  LLR2model.own <- lm.fit(x[,3:5], y)
+  
   # Set prior mean of regression coefficients
-  priorMean <- matrix(c(prior > 0, prior > 0, 0, 0, 0), ncol=1)
+  # if(is.na(prior))
+  #   priorMean <- matrix(0, nrow=5, ncol=1)
+  # else
+  #   priorMean <- matrix(c(prior > 0, prior > 0, 0, 0, 0), ncol=1)
   
   # Compute first LLR2
   LScoefs <- matrix(LLR2model$coefficients, ncol=1)
   LSfit <- matrix(LLR2model$fitted.values, ncol=1)
-  if(prior > 0) {
+  if(is.na(prior) || prior > 0) {
     sigmaSq <- norm(y - LSfit, "2")^2 / (n-p)
-    g <- ((norm(LSfit - x %*% priorMean,"2")^2 - p*sigmaSq) / (p*sigmaSq))[1]
-  } else
+    xi <- ((t(y) %*% x12)/norm(x12, "2")^2)[1]
+    g <- ((norm(LSfit, "2")^2 * norm(x12, "2")^2 - (t(y) %*% x12)^2)/(norm(x12, "2")^2 * p * sigmaSq) - 1)[1]
+    priorMean <- matrix(c(xi, xi, 0, 0, 0), ncol=1)
+    # g <- ((norm(LSfit - x %*% priorMean,"2")^2 - p*sigmaSq) / (p*sigmaSq))[1]
+  } else {
     g <- 1
+    priorMean <- matrix(0, nrow=5, ncol=1)
+  }
   posteriorMean <- (1/(1+g))*priorMean + (g/(1+g))*LScoefs
   posteriorFit <- x %*% posteriorMean
-  LLR2.AB <- var(posteriorFit)/(var(posteriorFit) + var(y-posteriorFit))
-  
-  # Compute second LLR2
-  LScoefs <- matrix(LLR2model.reverse$coefficients, ncol=1)
-  LSfit <- matrix(LLR2model.reverse$fitted.values, ncol=1)
-  if(prior > 0) {
-    sigmaSq <- norm(y.reverse - LSfit, "2")^2 / (n-p)
-    g <- ((norm(LSfit - x.reverse %*% priorMean,"2")^2 - p*sigmaSq) / (p*sigmaSq))[1]
-  } else
-    g <- 1
-  posteriorMean <- (1/(1+g))*priorMean + (g/(1+g))*LScoefs
-  posteriorFit <- x.reverse %*% posteriorMean
-  LLR2.BA <- var(posteriorFit)/(var(posteriorFit) + var(y.reverse-posteriorFit))
+  LLR2 <- var(posteriorFit)/(var(posteriorFit) + var(y-posteriorFit))
 
-  # Check which LLR2 was larger; use this to determine which gene is 
-  # A and which is B for remaining computations
-  if(LLR2.BA > LLR2.AB) {
-    LLR2 <- LLR2.BA
-    x <- x.reverse
-    y <- y.reverse
-  } else
-    LLR2 <- LLR2.AB
-  
-  # Fit the other two models
-  LLR2model.other <- lm.fit(x[,c(1,2,5)], y)
-  LLR2model.own <- lm.fit(x[,3:5], y)
-  
   # Compute LLR2.other
   LScoefs <- matrix(LLR2model.other$coefficients, ncol=1)
   LSfit <- matrix(LLR2model.other$fitted.values, ncol=1)
-  if(prior > 0) {
+  if(is.na(prior) || prior > 0) {
     sigmaSq <- norm(y - LSfit, "2")^2 / (n-p)
-    g <- ((norm(LSfit - x[,c(1,2,5)] %*% priorMean[c(1,2,5),],"2")^2 - p*sigmaSq) / (p*sigmaSq))[1]  
-  } else
+    xi <- ((t(y) %*% x12)/norm(x12, "2")^2)[1]
+    g <- ((norm(LSfit, "2")^2 * norm(x12, "2")^2 - (t(y) %*% x12)^2)/(norm(x12, "2")^2 * p * sigmaSq) - 1)[1]
+    priorMean <- matrix(c(xi, xi, 0), ncol=1)
+    # g <- ((norm(LSfit - x[,c(1,2,5)] %*% priorMean[c(1,2,5),],"2")^2 - p*sigmaSq) / (p*sigmaSq))[1]  
+  } else {
     g <- 1
-  posteriorMean <- (1/(1+g))*priorMean[c(1,2,5),] + (g/(1+g))*LScoefs
+    priorMean <- matrix(0, nrow=3, ncol=1)
+  }
+  posteriorMean <- (1/(1+g))*priorMean + (g/(1+g))*LScoefs
+  # posteriorMean <- (1/(1+g))*priorMean[c(1,2,5),] + (g/(1+g))*LScoefs
   posteriorFit <- x[,c(1,2,5)] %*% posteriorMean
   LLR2.other <- var(posteriorFit)/(var(posteriorFit) + var(y-posteriorFit))
 
   # Compute LLR2.own
   LScoefs <- matrix(LLR2model.own$coefficients, ncol=1)
   LSfit <- matrix(LLR2model.own$fitted.values, ncol=1)
-  if(prior > 0) {
+  priorMean <- matrix(0, nrow=3, ncol=1)
+  if(is.na(prior) || prior > 0) {
     sigmaSq <- norm(y - LSfit, "2")^2 / (n-p)
-    g <- ((norm(LSfit - x[,3:5] %*% priorMean[3:5,],"2")^2 - p*sigmaSq) / (p*sigmaSq))[1]  
+    g <- ((norm(LSfit - x[,3:5] %*% priorMean,"2")^2 - p*sigmaSq) / (p*sigmaSq))[1]  
+    # g <- ((norm(LSfit - x[,3:5] %*% priorMean[3:5,],"2")^2 - p*sigmaSq) / (p*sigmaSq))[1]  
   } else
     g <- 1
-  posteriorMean <- (1/(1+g))*priorMean[3:5,] + (g/(1+g))*LScoefs
+  posteriorMean <- (1/(1+g))*priorMean + (g/(1+g))*LScoefs
+  # posteriorMean <- (1/(1+g))*priorMean[3:5,] + (g/(1+g))*LScoefs
   posteriorFit <- x[,3:5] %*% posteriorMean
   LLR2.own <- var(posteriorFit)/(var(posteriorFit) + var(y-posteriorFit))
 

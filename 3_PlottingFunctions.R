@@ -54,15 +54,17 @@ Draw.R2.Scatterplot <- function(matrix1, matrix2, priorMatrix, geneSubset) {
   xAxis <- Vectorize.Labeled.Square.Matrix(matrix1[geneSubset, geneSubset])
   yAxis <- Vectorize.Labeled.Square.Matrix(matrix2[geneSubset, geneSubset])
   if(missing(priorMatrix))
-    prior <- matrix(0L, nrow=nrow(xAxis))
-  else
-    prior <- Vectorize.Labeled.Square.Matrix((priorMatrix[geneSubset, geneSubset] > 0) + 0)
+    prior <- matrix(0L, nrow=nrow(xAxis), ncol=1)
+  else {
+    prior <- Vectorize.Labeled.Square.Matrix(priorMatrix[geneSubset, geneSubset])
+    prior[is.na(prior)] <- 0
+  }
   plotData <- as.data.frame(cbind(round(xAxis, 3), round(yAxis, 3), prior))
   colnames(plotData) <- c("x.axis", "y.axis", "prior")
   plotData$prior <- as.factor(plotData$prior)
   hoverText <- row.names(plotData)
   p <- ggplot(plotData, aes(x=x.axis, y=y.axis, color=prior, text=hoverText)) + 
-    geom_point(size=0.85) + xlab('LLR2_other') + ylab('LLR2 - LLR2_own') + 
+    geom_point(size=0.8) + xlab('LLR2_other') + ylab('LLR2 - LLR2_own') + 
     ggtitle("Lead-lag R^2 Values") + theme_light() + theme(legend.position="none") +
     scale_color_manual(values=c("navy", "orangered3"))
   ggplotly(p)
