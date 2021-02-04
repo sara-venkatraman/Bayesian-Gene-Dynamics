@@ -105,8 +105,8 @@ colnames(nonBayesLLR2Mat.own) <- rownames(nonBayesLLR2Mat.own) <- names(geneData
 Sys.time() - startTime
 
 # Write R^2 similarity matrices to CSV, if desired
-# write.csv(nonBayesLLR2Mat, "LLR2.csv")
-# write.csv(nonBayesLLR2Mat.other, "LLR2_other.csv")
-# write.csv(nonBayesLLR2Mat.own, "LLR2_own.csv")
+write.csv(nonBayesLLR2Mat, "../Processed Data/R-Squared Matrices/NonBayesLLR2.csv")
+write.csv(nonBayesLLR2Mat.other, "../Processed Data/R-Squared Matrices/NonBayesLLR2_other.csv")
+write.csv(nonBayesLLR2Mat.own, "../Processed Data/R-Squared Matrices/NonBayesLLR2_own.csv")
 
 

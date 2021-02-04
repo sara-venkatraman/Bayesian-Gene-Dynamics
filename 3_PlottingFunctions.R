@@ -20,7 +20,10 @@ Time.Profile.Extrema <- function(genesToPlot) {
 }
 
 Plot.Gene.Group <- function(genesToPlot) {
-  plotColors <- c(brewer.pal(n=8, name="Dark2"), brewer.pal(n=8, name="Set2"), brewer.pal(n=12, name="Paired"))[1:length(genesToPlot)]
+  plotColors <- c(brewer.pal(n=8, name="Dark2"), 
+                  brewer.pal(n=8, name="Set2"), 
+                  brewer.pal(n=12, name="Paired"),
+                  brewer.pal(n=9, name="Pastel1"))[1:length(genesToPlot)]
   plotTitle <- strwrap(paste(genesToPlot, collapse=", "))
   plotExtrema <- Time.Profile.Extrema(genesToPlot)
   interp <- Expression.Profile.Interpolant(genesToPlot[1])
