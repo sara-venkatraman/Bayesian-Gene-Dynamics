@@ -36,127 +36,78 @@ networkBayes <- graph_from_adjacency_matrix(adjBayes , mode='undirected', diag=F
 plot(networkBayes, layout=layout_nicely, vertex.label=NA, vertex.size=3, vertex.color=cluster_label_prop(networkBayes)$membership)
 
 # Plot largest connected component from Bayesian analysis
-# Contains 426/1735 genes (from full gene set)
-# Contains 290/951 genes (from DE gene set)
+# Contains 426/1735 genes (from full gene set), using 0.95 R^2 cutoff for edges
+# Contains 290/951 genes (from DE gene set), using 0.95 R^2 cutoff for edges
 networkBayesComponents <- clusters(networkBayes, mode="strong")
 subnetworkBayes <- induced_subgraph(networkBayes, V(networkBayes)[networkBayesComponents$membership == which.max(networkBayesComponents$csize)])
 plot(subnetworkBayes, layout=layout_with_kk, vertex.label=NA, vertex.size=4.5, edge.width=0.7, vertex.color=cluster_label_prop(subnetworkBayes)$membership, vertex.frame.color="darkslategray", edge.color="dimgray")
 
-# Plot gene communities
-pdf("GeneCommunities.pdf", height=9, width=11)
-par(mfrow=c(3,3))
-for(i in 1:max(subnetworkBayesCommunities$membership)) {
-  genesInCommunity <- V(subnetworkBayes)[subnetworkBayesCommunities$membership == i]
-  if(i <= 37) {
-    Plot.Gene.Group(genesInCommunity)
-  }
-}
-dev.off(); par(mfrow=c(1,1))
-
-# Plot different connected components
-bayesNetworkComponentSizes <- order(networkBayesComponents$csize, decreasing=TRUE)
-pdf("ConnectedComponents.pdf", height=9, width=12)
-par(mfrow=c(3,4))
-for(i in 1:11) {
-  connectedComponent <- induced_subgraph(networkBayes, V(networkBayes)[networkBayesComponents$membership == bayesNetworkComponentSizes[i]])
-  
-  # Plot the component
-  plot(connectedComponent, layout=layout_with_kk, vertex.label=NA, vertex.size=5, 
-       edge.width=0.7, vertex.color=cluster_label_prop(connectedComponent)$membership, 
-       vertex.frame.color="darkslategray", edge.color="dimgray", 
-       main=paste("Connected component", i))
-  
-  # Get a list of genes in that component
-  componentEdges <- data.frame(as_edgelist(connectedComponent))
-  colnames(componentEdges) <- c("Gene1", "Gene2")
-  componentEdges$Prior <- 0
-  for(j in 1:nrow(componentEdges)) {
-    componentEdges$Prior[j] <- priorMatrix[componentEdges[j,1], componentEdges[j,2]]
-  }
-  write.csv(componentEdges, paste("Component", i, "Edges.csv", sep=""), row.names=F)
-}
-dev.off(); par(mfrow=c(1,1))
-
-
 # --- Plotting clusters from Bayesian analysis ---
 
-# Hierarchical clustering
-
+# Hierarchical clustering: compute distance matrix and cluster via Ward's method
 distMatrix <- 1 - (bayesLLR2Mat)
 hierClust <- hclust(as.dist(distMatrix), method="ward.D")
+
+# Extract k=40 clusters and plot clusters with <= 37 genes in a PDF
 k <- 40
-clusters <- cutree(hierClust, k=k)
-table(clusters)
-
-Plot.Gene.Group(geneNames[clusters == 30])
-Plot.Gene.Group(geneNames[clusters == 36])
-Plot.Gene.Group(geneNames[clusters == 8])
-Plot.Gene.Group(geneNames[clusters == 40])
-
-pdf("GeneClusters.pdf", height=9, width=11)
+clusters <- cutree(hierClust, k=k);  table(clusters)
+pdf("Output/GeneClusters.pdf", height=9, width=11)
 par(mfrow=c(3,3))
 for(i in 1:k) {
-  genesInCluster <- geneNames[clusters == i]
-  if(i <= 37) {
-    Plot.Gene.Group(genesInCluster)
-  }
+  if(i <= 37) { Plot.Gene.Group(geneNames[clusters == i]) }
 }
 dev.off(); par(mfrow=c(1,1))
 
-# Extract subnetworks from dendrogram
+# Cut the dendrogram at ~ 9 or 10 (yields 15 clusters)
 plot(hierClust)
 subGroups <- cutree(hierClust, h=9)
 table(subGroups)
-
 Plot.Gene.Group(geneNames[subGroups == 16], T, F)
 
-# Get prior for each network edge
-bayesNetworkEdges <- data.frame(as_edgelist(networkBayes))
-colnames(bayesNetworkEdges) <- c("Gene1", "Gene2")
-bayesNetworkEdges$Prior <- 0
-for(i in 1:nrow(bayesNetworkEdges)) {
-  bayesNetworkEdges$Prior[i] <- priorMatrix[bayesNetworkEdges[i,"Gene1"], bayesNetworkEdges[i,"Gene2"]]
-}
-
+# For each of the 15 clusters, plot the network formed from the cluster
 pdf("Output/15GeneClusterNetworks.pdf", height=11, width=16)
 par(mfrow=c(3,5))
 for(i in 1:length(table(subGroups))) {
+  # Get the gene names in the i-th cluster
   subGroupNames <- names(subGroups)[subGroups == i]
-  adjBayesSubGroup <- adjBayes[subGroupNames, subGroupNames]#(bayesLLR2Mat[subGroupNames, subGroupNames] > 0.9) + 0
+  
+  # Form an adjacency matrix and the corresponding graph from those genes.
+  # Define an edge between genes if the Bayesian LLR2 > 0.9
+  adjBayesSubGroup <- (bayesLLR2Mat[subGroupNames, subGroupNames] > 0.9) + 0
   subnetHierClust <- graph_from_adjacency_matrix(adjBayesSubGroup , mode='undirected', diag=F)
   
+  # Form a dataframe out of the list of edges in the network, where each row
+  # defines an edge between the genes in columns 1 and 2. Add a third column
+  # containing the prior adjacency matrix value for each of those edges.
   subnetEdges <- data.frame(as_edgelist(subnetHierClust))
   colnames(subnetEdges) <- c("Gene1", "Gene2")
   subnetEdges$Prior <- 0
-  for(j in 1:nrow(subnetEdges)) {
+  for(j in 1:nrow(subnetEdges))
     subnetEdges$Prior[j] <- priorMatrix[subnetEdges[j,"Gene1"], subnetEdges[j,"Gene2"]]
-  }
+  
+  # Write the dataframe to a CSV for this cluster
   write.csv(subnetEdges, paste("Output/Cluster", i, "Edges.csv", sep=""), row.names=F)
   
+  # Edges between genes with unknown associations will be blue, and edges 
+  # between genes with known associations will be red.
   E(subnetHierClust)$color[is.na(subnetEdges$Prior)] <- 'blue'
   E(subnetHierClust)$color[!is.na(subnetEdges$Prior)] <- alpha('red', 0.7)
+  
+  # Plot the network for this cluster on the PDF
   plot(subnetHierClust, layout=layout_nicely, vertex.label=NA, vertex.size=5, 
        edge.width=1, vertex.color="gray", vertex.frame.color="darkslategray", 
        main=paste("Network from Cluster", i), cex.main=1.5)
 }
 dev.off(); par(mfrow=c(1,1))
 
+# For each of the 15 clusters, plot the time profiles of all genes in the cluster
 pdf("Output/15GeneClusters.pdf", height=11, width=23)
 par(mfrow=c(3,5))
 plotColors <- c(brewer.pal(n=8, name="Dark2"), brewer.pal(n=8, name="Dark2"))
 for(i in 1:length(table(subGroups))) {
-  # Plot the cluster
-  Plot.Gene.Group(geneNames[subGroups == i], monochrome=plotColors[i], points=F, plotTitle=paste("Cluster ", i, " (", length(geneNames[subGroups == i]), " genes)", sep=""), titleSize=1.5)
-  
-  # Get a list of edges in the cluster
-  # clusterNetwork <- induced_subgraph(networkBayes, V(networkBayes)[subGroups == i])
-  # clusterEdges <- data.frame(as_edgelist(clusterNetwork))
-  # colnames(clusterEdges) <- c("Gene1", "Gene2")
-  # clusterEdges$Prior <- 0
-  # for(j in 1:nrow(clusterEdges)) {
-  #   clusterEdges$Prior[j] <- priorMatrix[clusterEdges[j,1], clusterEdges[j,2]]
-  # }
-  # write.csv(clusterEdges, paste("Output/Cluster", i, "Edges.csv", sep=""), row.names=F)
+  Plot.Gene.Group(geneNames[subGroups == i], monochrome=plotColors[i], points=F, 
+                  plotTitle=paste("Cluster ", i, " (", length(geneNames[subGroups == i]), " genes)", sep=""),
+                  titleSize=1.5)
 }
 dev.off(); par(mfrow=c(1,1))
 
