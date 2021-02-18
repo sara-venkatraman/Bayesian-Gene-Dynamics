@@ -31,7 +31,7 @@ subnetworkNonBayes <- induced_subgraph(networkNonBayes, V(networkNonBayes)[netwo
 plot(subnetworkNonBayes, layout=layout.fruchterman.reingold, vertex.label=NA, vertex.size=4, vertex.frame.color="darkslategray",edge.width=0.5)#vertex.color=cluster_label_prop(subnetworkNonBayes)$membership, vertex.frame.color="black")
 
 # Bayesian analysis
-adjBayes <- (bayesLLR2Mat > 0.85) + 0
+adjBayes <- (bayesLLR2Mat > 0.95) + 0
 networkBayes <- graph_from_adjacency_matrix(adjBayes , mode='undirected', diag=F)
 plot(networkBayes, layout=layout_nicely, vertex.label=NA, vertex.size=3, vertex.color=cluster_label_prop(networkBayes)$membership)
 
@@ -42,30 +42,20 @@ networkBayesComponents <- clusters(networkBayes, mode="strong")
 subnetworkBayes <- induced_subgraph(networkBayes, V(networkBayes)[networkBayesComponents$membership == which.max(networkBayesComponents$csize)])
 plot(subnetworkBayes, layout=layout_with_kk, vertex.label=NA, vertex.size=4.5, edge.width=0.7, vertex.color=cluster_label_prop(subnetworkBayes)$membership, vertex.frame.color="darkslategray", edge.color="dimgray")
 
-# --- Plotting clusters from Bayesian analysis ---
+# --- Hierarchical clustering from Bayesian analysis ---
 
-# Hierarchical clustering: compute distance matrix and cluster via Ward's method
+# Compute distance matrix and cluster via Ward's method
 distMatrix <- 1 - (bayesLLR2Mat)
 hierClust <- hclust(as.dist(distMatrix), method="ward.D")
-
-# Extract k=40 clusters and plot clusters with <= 37 genes in a PDF
-k <- 40
-clusters <- cutree(hierClust, k=k);  table(clusters)
-pdf("Output/GeneClusters.pdf", height=9, width=11)
-par(mfrow=c(3,3))
-for(i in 1:k) {
-  if(i <= 37) { Plot.Gene.Group(geneNames[clusters == i]) }
-}
-dev.off(); par(mfrow=c(1,1))
+plot(hierClust)
 
 # Cut the dendrogram at ~ 9 or 10 (yields 15 clusters)
-plot(hierClust)
 subGroups <- cutree(hierClust, h=9)
 table(subGroups)
-Plot.Gene.Group(geneNames[subGroups == 16], T, F)
+Plot.Gene.Group(geneNames[subGroups == 14], T, F)
 
 # For each of the 15 clusters, plot the network formed from the cluster
-pdf("Output/15GeneClusterNetworks.pdf", height=11, width=16)
+pdf("Output/GeneClusterNetworks.pdf", height=11, width=16)
 par(mfrow=c(3,5))
 for(i in 1:length(table(subGroups))) {
   # Get the gene names in the i-th cluster
@@ -94,20 +84,33 @@ for(i in 1:length(table(subGroups))) {
   E(subnetHierClust)$color[!is.na(subnetEdges$Prior)] <- alpha('red', 0.7)
   
   # Plot the network for this cluster on the PDF
+  numUnknownEdges <- sum(is.na(subnetEdges$Prior))
+  numKnownEdges <- sum(!is.na(subnetEdges$Prior))
+  plotTitle <- paste("Network from Cluster ", i, "\n(", length(subGroupNames), " genes; ", numKnownEdges, " known edges, ", numUnknownEdges, " unknown)", sep="")
   plot(subnetHierClust, layout=layout_nicely, vertex.label=NA, vertex.size=5, 
        edge.width=1, vertex.color="gray", vertex.frame.color="darkslategray", 
-       main=paste("Network from Cluster", i), cex.main=1.5)
+       main=plotTitle, cex.main=1.5)
 }
 dev.off(); par(mfrow=c(1,1))
 
 # For each of the 15 clusters, plot the time profiles of all genes in the cluster
-pdf("Output/15GeneClusters.pdf", height=11, width=23)
+pdf("Output/GeneClusters.pdf", height=11, width=23)
 par(mfrow=c(3,5))
 plotColors <- c(brewer.pal(n=8, name="Dark2"), brewer.pal(n=8, name="Dark2"))
 for(i in 1:length(table(subGroups))) {
+  plotTitle=paste("Cluster ", i, " (", length(geneNames[subGroups == i]), " genes)", sep="")
   Plot.Gene.Group(geneNames[subGroups == i], monochrome=plotColors[i], points=F, 
-                  plotTitle=paste("Cluster ", i, " (", length(geneNames[subGroups == i]), " genes)", sep=""),
-                  titleSize=1.5)
+                  plotTitle=plotTitle, titleSize=1.5)
+}
+dev.off(); par(mfrow=c(1,1))
+
+# Alternatively, extract k=40 clusters and plot clusters with <= 37 genes
+k <- 40
+clusters <- cutree(hierClust, k=k);  table(clusters)
+pdf("Output/GeneClustersWithColors.pdf", height=9, width=11)
+par(mfrow=c(3,3))
+for(i in 1:k) {
+  if(i <= 37) { Plot.Gene.Group(geneNames[clusters == i]) }
 }
 dev.off(); par(mfrow=c(1,1))
 
@@ -118,55 +121,4 @@ Draw.R2.Scatterplot(nonBayesLLR2Mat.other, nonBayesLLR2Mat - nonBayesLLR2Mat.own
 
 Draw.R2.Scatterplot(bayesLLR2Mat.other, bayesLLR2Mat - bayesLLR2Mat.own, 
                     priorMatrix, geneSubset, interactive=F)
-
-# --- Inferring R^2 cutoffs from data ---
-
-# Vectorize the LLR2 matrix and the prior matrix (saved into CSV)
-bayesLLR2Vec <- data.frame(Vectorize.Labeled.Square.Matrix(bayesLLR2Mat),
-                           Vectorize.Labeled.Square.Matrix(priorMatrix))
-bayesLLR2Vec <- bayesLLR2Vec[order(bayesLLR2Vec[,1], decreasing=T),]
-colnames(bayesLLR2Vec) <- c("LLR2", "Prior")
-
-# How many edges exist are there in the prior matrix? Compute the proportion
-# of "1"s in one of the triangular halves of priorMatrix
-numPositiveEdges <- sum(priorMatrix[upper.tri(priorMatrix)] == 1, na.rm=T)
-numPossibleEdges <- sum(upper.tri(priorMatrix))
-priorEdge1Prob <- numPositiveEdges / numPossibleEdges 
-
-# It's about 3.3%. Let prior parameters for Beta distribution on p be
-# alpha = 1 and beta = 29.7. Then the posterior mean is:
-alpha <- 1;  beta <- 29.7
-postEdge1Prob <- (numPositiveEdges + alpha) / (numPossibleEdges + alpha + beta)
-
-# Take the top postEdgeProb proportion of R^2 values
-topConnections <- bayesLLR2Vec[1:round(postEdge1Prob*nrow(bayesLLR2Vec)),]
-topGenePairs <- strsplit(rownames(topConnections), ", ")
-Plot.Gene.Group(topGenePairs[[50]])
-
-# Compute P(W=1 | R^2 = r). Rather than using the built-in 'density' function,
-# use the kdensity package, which returns a density that can be evaluated at a point
-library(kdensity)
-LLR2WithPrior0 <- bayesLLR2Vec[is.na(bayesLLR2Vec$Prior) | bayesLLR2Vec$Prior == 0,]
-LLR2WithPrior1 <- bayesLLR2Vec[!is.na(bayesLLR2Vec$Prior) & bayesLLR2Vec$Prior == 1,]
-LLR2Density0 <- kdensity(LLR2WithPrior0$LLR2)
-LLR2Density1 <- kdensity(LLR2WithPrior1$LLR2)
-plot(LLR2Density0, main="Density of LLR2 (W=0)")
-plot(LLR2Density1, main="Density of LLR2 (W=1)")
-Compute.Posterior.Edge.Prob <- function(R2Density0, R2Density1, r, w, priorEdge1Prob) {
-  priorEdge0Prob <- 1 - priorEdge1Prob
-  denominator <- R2Density0(r)*priorEdge0Prob + R2Density1(r)*priorEdge1Prob
-  if(w == 0)
-    numerator <- R2Density0(r)*priorEdge0Prob
-  else
-    numerator <- R2Density1(r)*priorEdge1Prob
-  numerator/denominator
-}
-Compute.Posterior.Edge.Prob(LLR2Density0, LLR2Density1, 0.5, 1, priorEdge1Prob)
-
-postEdgeProbUncond <- 0
-for(i in 1:nrow(LLR2WithPrior1)) {
-  postEdgeProbUncond <- postEdgeProbUncond + LLR2Density1(LLR2WithPrior1$LLR2[i])*priorEdge1Prob
-}
-postEdgeProbUncond
-
 
