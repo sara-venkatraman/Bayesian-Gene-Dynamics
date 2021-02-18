@@ -72,8 +72,9 @@ for(i in 1:length(table(subGroups))) {
   subnetEdges <- data.frame(as_edgelist(subnetHierClust))
   colnames(subnetEdges) <- c("Gene1", "Gene2")
   subnetEdges$Prior <- 0
-  for(j in 1:nrow(subnetEdges))
+  for(j in 1:nrow(subnetEdges)) {
     subnetEdges$Prior[j] <- priorMatrix[subnetEdges[j,"Gene1"], subnetEdges[j,"Gene2"]]
+  }
   
   # Write the dataframe to a CSV for this cluster
   write.csv(subnetEdges, paste("Output/Cluster", i, "Edges.csv", sep=""), row.names=F)
@@ -103,6 +104,13 @@ for(i in 1:length(table(subGroups))) {
                   plotTitle=plotTitle, titleSize=1.5)
 }
 dev.off(); par(mfrow=c(1,1))
+
+# Create a list in which each entry is a vector of gene names in one cluster
+clusterList <- list()
+for(i in 1:length(table(subGroups))) { 
+  clusterList[[i]] <- names(subGroups)[subGroups == i]
+}
+save(clusterList, file="Output/GeneClusters.RData")
 
 # Alternatively, extract k=40 clusters and plot clusters with <= 37 genes
 k <- 40
