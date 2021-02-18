@@ -144,6 +144,6 @@ colnames(bayesLLR2Mat.own) <- rownames(bayesLLR2Mat.own) <- names(geneDataList)
 Sys.time() - startTime
 
 # Write R^2 similarity matrices to CSV, if desired
-write.csv(bayesLLR2Mat, "../Processed Data/R-Squared Matrices/BayesLLR2.csv")
-write.csv(bayesLLR2Mat.other, "../Processed Data/R-Squared Matrices/BayesLLR2_Other.csv")
-write.csv(bayesLLR2Mat.own, "../Processed Data/R-Squared Matrices/BayesLLR2_Own.csv")
+write.csv(bayesLLR2Mat, "BayesLLR2.csv")
+write.csv(bayesLLR2Mat.other, "BayesLLR2_Other.csv")
+write.csv(bayesLLR2Mat.own, "BayesLLR2_Own.csv")

@@ -247,11 +247,10 @@ priorMatrix[priorMatrix <= 500] <- 0
 rownames(priorMatrix) <- geneNames;  colnames(priorMatrix) <- geneNames
 write.csv(priorMatrix, "../Processed Data/Prior Matrices/DEPriorMatrix.csv")
 
-# --- Create a prior information matrix for DE genes with entries 0,1,2 ---
+# --- Create a prior information matrix for DE genes with entries 0,1,NA ---
 
 # 0 = neither STRING nor replicate data agrees that there's an association
 # 1 = one of the two sources indicates an association
-# 2 = both sources indicate association
 
 subdirectory <- "Combined Genes"
 
