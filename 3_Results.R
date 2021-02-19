@@ -45,7 +45,7 @@ plot(subnetworkBayes, layout=layout_with_kk, vertex.label=NA, vertex.size=4.5, e
 # --- Hierarchical clustering from Bayesian analysis ---
 
 # Compute distance matrix and cluster via Ward's method
-distMatrix <- 1 - (bayesLLR2Mat)
+distMatrix <- 1 - bayesLLR2Mat
 hierClust <- hclust(as.dist(distMatrix), method="ward.D")
 plot(hierClust)
 
@@ -93,6 +93,73 @@ for(i in 1:length(table(subGroups))) {
        main=plotTitle, cex.main=1.5)
 }
 dev.off(); par(mfrow=c(1,1))
+
+# For each of the 15 clusters: take the set of genes with at least one blue edge,
+# Add all their neighbors (genes with at least one edge), plot the network
+pdf("Output/GeneClusterSubnetworks.pdf", height=12, width=12)
+for(i in 1:length(table(subGroups))) {
+  # Get the gene names in the i-th cluster
+  subGroupNames <- names(subGroups)[subGroups == i]
+  
+  # Form an adjacency matrix and the corresponding graph from those genes.
+  # Define an edge between genes if the Bayesian LLR2 > 0.9
+  adjBayesSubGroup <- (bayesLLR2Mat[subGroupNames, subGroupNames] > 0.9) + 0
+  subnetHierClust <- graph_from_adjacency_matrix(adjBayesSubGroup , mode='undirected', diag=F)
+  
+  # Form a dataframe out of the list of edges in the network, where each row
+  # defines an edge between the genes in columns 1 and 2. Add a third column
+  # containing the prior adjacency matrix value for each of those edges.
+  subnetEdges <- data.frame(as_edgelist(subnetHierClust))
+  colnames(subnetEdges) <- c("Gene1", "Gene2"); subnetEdges$Prior <- 0
+  for(j in 1:nrow(subnetEdges)) {
+    prior <- priorMatrix[subnetEdges[j,"Gene1"], subnetEdges[j,"Gene2"]]
+    subnetEdges$Prior[j] <- prior
+  }
+  
+  # Get the nodes (genes) with at least one unknown edge
+  unknownEdges <- subnetEdges[is.na(subnetEdges$Prior),]
+  nodesWithUnknownEdges <- unique(c(unknownEdges$Gene1, unknownEdges$Gene2))
+  
+  # Get the neighbors of the nodes with at least one unknown edge, store in allNodes
+  neighborNodes <- adjacent_vertices(subnetHierClust, nodesWithUnknownEdges)
+  allNodes <- c()
+  for(j in 1:length(neighborNodes)) {
+    allNodes <- c(allNodes, names(neighborNodes[j]), names(neighborNodes[[j]]))
+  }
+  allNodes <- unique(allNodes)
+  
+  # Form a new subnetwork out of allNodes
+  newAdjBayesSubGroup <- (bayesLLR2Mat[allNodes, allNodes] > 0.9) + 0
+  newSubnet <- graph_from_adjacency_matrix(newAdjBayesSubGroup , mode='undirected', diag=F)
+  
+  # Get a new subnetEdges dataframe corresponding to allNodes
+  newSubnetEdges <- data.frame(as_edgelist(newSubnet))
+  colnames(newSubnetEdges) <- c("Gene1", "Gene2"); newSubnetEdges$Prior <- 0
+  for(j in 1:nrow(newSubnetEdges)) {
+    prior <- priorMatrix[newSubnetEdges[j,"Gene1"], newSubnetEdges[j,"Gene2"]]
+    newSubnetEdges$Prior[j] <- prior
+  }
+  
+  # Edges between genes with unknown associations will be blue, and edges 
+  # between genes with known associations will be red.
+  E(newSubnet)$color[is.na(newSubnetEdges$Prior)] <- 'blue'
+  E(newSubnet)$color[!is.na(newSubnetEdges$Prior)] <- alpha('red', 0.7)
+  
+  # Plot the new subnetwork for this cluster on the PDF
+  numUnknownEdges <- sum(is.na(newSubnetEdges$Prior))
+  numKnownEdges <- sum(!is.na(newSubnetEdges$Prior))
+  plotTitle <- paste("Subnetwork from Cluster ", i, "\n(", length(allNodes), " genes; ", numKnownEdges, " known edges, ", numUnknownEdges, " unknown)", sep="")
+  if(i %in% c(2,7,9,12,14))
+    netLayout <- layout_with_lgl
+  else if(i %in% c(4,5,10,11))
+    netLayout <- layout_with_kk
+  else if(i %in% c(1,3,6,8,13))
+    netLayout <- layout_nicely
+  plot(newSubnet, layout=netLayout, vertex.size=8, vertex.label.family="Helvetica",
+       vertex.label.cex=0.5, edge.width=1.2, vertex.color=alpha("papayawhip", 0.85), vertex.frame.color="peachpuff3", 
+       main=plotTitle, cex.main=1.5)
+}
+dev.off()
 
 # For each of the 15 clusters, plot the time profiles of all genes in the cluster
 pdf("Output/GeneClusters.pdf", height=11, width=23)
