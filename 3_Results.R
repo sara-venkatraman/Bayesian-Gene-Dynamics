@@ -130,3 +130,24 @@ Draw.R2.Scatterplot(nonBayesLLR2Mat.other, nonBayesLLR2Mat - nonBayesLLR2Mat.own
 Draw.R2.Scatterplot(bayesLLR2Mat.other, bayesLLR2Mat - bayesLLR2Mat.own, 
                     priorMatrix, geneSubset, interactive=F)
 
+# --- Large heatmap of the Bayesian R^2 similarity matrix ---
+
+Draw.Heatmap.Diagonal.Block <- function(k) {
+  simMatrixSection <- melt(as.matrix(bayesLLR2Mat[k:(k+346), k:(k+346)]))
+  plotTitle <- paste("Diagonal block of LLR2 similarity matrix: Genes", k, "to", k+346)
+  ggplot(data=simMatrixSection, aes(x=Var2, y=Var1, fill=value)) + geom_tile() +
+    theme(axis.title.x = element_blank(), axis.title.y = element_blank()) +
+    theme(axis.text.x=element_text(angle=90, hjust=0.95,vjust=0.2)) +
+    scale_fill_distiller(palette="Blues", direction=1) + 
+    ggtitle(label=plotTitle) + theme(plot.title=element_text(size=40, face="bold")) +
+    theme(legend.position="none")
+}
+
+pdf("Output/HeatmapFullGeneSet.pdf", height=38, width=34)
+Draw.Heatmap.Diagonal.Block(1)
+Draw.Heatmap.Diagonal.Block(348)
+Draw.Heatmap.Diagonal.Block(695)
+Draw.Heatmap.Diagonal.Block(1042)
+Draw.Heatmap.Diagonal.Block(1389)
+dev.off()
+

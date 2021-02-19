@@ -4,6 +4,8 @@ library(ggplot2)
 library(plotly)
 library(latex2exp)
 library(scales)
+library(gplots)
+library(reshape2)
 
 Expression.Profile.Interpolant <- function(geneName) {
   profile <- geneData[geneName,]
