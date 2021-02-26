@@ -72,12 +72,8 @@ Get.R2.Bayes <- function(x, y, prior) {
     g <- 1
   posteriorMean <- (1/(1+g))*priorMean + (g/(1+g))*LScoefs
   posteriorFit <- x %*% posteriorMean
-  LLR2 <- var(posteriorFit)/(var(posteriorFit) + var(y-posteriorFit))
+  LLR2 <- norm(posteriorFit, "2")/(norm(posteriorFit, "2") + norm(y-posteriorFit, "2"))
   
-  # For F-statistic calculation
-  gReturn <- g
-  sigmaSqReturn <- sigmaSq
-
   # Compute LLR2.other
   LScoefs <- matrix(LLR2model.other$coefficients, ncol=1)
   LSfit <- matrix(LLR2model.other$fitted.values, ncol=1)
@@ -88,7 +84,7 @@ Get.R2.Bayes <- function(x, y, prior) {
     g <- 1
   posteriorMean <- (1/(1+g))*priorMean[c(1,2,5),] + (g/(1+g))*LScoefs
   posteriorFit <- x[,c(1,2,5)] %*% posteriorMean
-  LLR2.other <- var(posteriorFit)/(var(posteriorFit) + var(y-posteriorFit))
+  LLR2.other <- norm(posteriorFit, "2")/(norm(posteriorFit, "2") + norm(y-posteriorFit, "2"))
 
   # Compute LLR2.own
   LScoefs <- matrix(LLR2model.own$coefficients, ncol=1)
@@ -100,7 +96,7 @@ Get.R2.Bayes <- function(x, y, prior) {
     g <- 1
   posteriorMean <- (g/(1+g))*LScoefs
   posteriorFit <- x[,3:5] %*% posteriorMean
-  LLR2.own <- var(posteriorFit)/(var(posteriorFit) + var(y-posteriorFit))
+  LLR2.own <- norm(posteriorFit, "2")/(norm(posteriorFit, "2") + norm(y-posteriorFit, "2"))
 
   # Combine results into a list
   list(LLR2, LLR2.other, LLR2.own, gReturn, sigmaSqReturn) 
