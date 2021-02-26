@@ -74,6 +74,13 @@ Get.R2.Bayes <- function(x, y, prior) {
   posteriorFit <- x %*% posteriorMean
   LLR2 <- norm(posteriorFit, "2")/(norm(posteriorFit, "2") + norm(y-posteriorFit, "2"))
   
+  # F-statistic calculation
+  H <- x %*% solve(t(x) %*% x, t(x))
+  I <- diag(1, nrow=n)
+  FstatNum <- ((1+g)/(g*sqrt(sigmaSq)))^2 * norm(posteriorFit, "2") / p
+  FstatDen <- norm(solve(I - g/(1+g)*H, y-posteriorFit), "2") / n
+  Fstat <- FstatNum[1]/FstatDen[1]
+  
   # Compute LLR2.other
   LScoefs <- matrix(LLR2model.other$coefficients, ncol=1)
   LSfit <- matrix(LLR2model.other$fitted.values, ncol=1)
@@ -99,7 +106,7 @@ Get.R2.Bayes <- function(x, y, prior) {
   LLR2.own <- norm(posteriorFit, "2")/(norm(posteriorFit, "2") + norm(y-posteriorFit, "2"))
 
   # Combine results into a list
-  list(LLR2, LLR2.other, LLR2.own, gReturn, sigmaSqReturn) 
+  list(LLR2, LLR2.other, LLR2.own, Fstat) 
 }
 
 # Compute all R^2 values
@@ -129,8 +136,7 @@ bayesLLR2Mat.other <- Get.R2.Matrix.From.List(genePairs, lapply(R2Bayes, `[[`, 2
 bayesLLR2Mat.own <- Get.R2.Matrix.From.List(genePairs, lapply(R2Bayes, `[[`, 3))
 
 # For F-statistic calculations
-gMat <- Get.R2.Matrix.From.List(genePairs, lapply(R2Bayes, `[[`, 4))
-sigmaSqMat <- Get.R2.Matrix.From.List(genePairs, lapply(R2Bayes, `[[`, 5))
+FstatMat <- Get.R2.Matrix.From.List(genePairs, lapply(R2Bayes, `[[`, 4))
 
 # Add in the diagonals
 for (i in seq_along(geneDataList)) {
@@ -143,8 +149,7 @@ for (i in seq_along(geneDataList)) {
 colnames(bayesLLR2Mat) <- rownames(bayesLLR2Mat) <- names(geneDataList)
 colnames(bayesLLR2Mat.other) <- rownames(bayesLLR2Mat.other) <- names(geneDataList)
 colnames(bayesLLR2Mat.own) <- rownames(bayesLLR2Mat.own) <- names(geneDataList)
-colnames(gMat) <- rownames(gMat) <- names(geneDataList)
-colnames(sigmaSqMat) <- rownames(sigmaSqMat) <- names(geneDataList)
+colnames(FstatMat) <- rownames(FstatMat) <- names(geneDataList)
 
 # Stop timer and print runtime
 Sys.time() - startTime
@@ -153,5 +158,4 @@ Sys.time() - startTime
 write.csv(bayesLLR2Mat, "BayesLLR2.csv")
 write.csv(bayesLLR2Mat.other, "BayesLLR2_Other.csv")
 write.csv(bayesLLR2Mat.own, "BayesLLR2_Own.csv")
-write.csv(gMat, "G_Matrix.csv")
-write.csv(sigmaSqMat, "SigmaSq_Matrix.csv")
+write.csv(FstatMat, "FStat_Matrix.csv")
