@@ -10,7 +10,7 @@
 # - "/Combined Genes/" contains the union of the genes in the previous two directories.
 
 # Set the desired subdirectory:
-subdirectory <- "Combined Genes"
+subdirectory <- "Differentially-Expressed"
 
 # Read gene names and Flybase IDs and format them as character vectors
 geneNames <- read.csv(paste("../Processed Data/", subdirectory, "/GeneNames.csv", sep=""), header=T)

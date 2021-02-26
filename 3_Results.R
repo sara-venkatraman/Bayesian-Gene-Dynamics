@@ -162,6 +162,48 @@ for(i in 1:length(table(subGroups))) {
 dev.off()
 
 # For each of the 15 clusters, plot the time profiles of all genes in the cluster
+pdf("Output/GeneClustersWithUnknownAssociations.pdf", height=11, width=23)
+par(mfrow=c(3,5))
+plotColors <- c(brewer.pal(n=8, name="Dark2"), brewer.pal(n=8, name="Dark2"))
+for(i in 1:length(table(subGroups))) {
+  # Get the gene names in the i-th cluster
+  subGroupNames <- names(subGroups)[subGroups == i]
+  
+  # Form an adjacency matrix and the corresponding graph from those genes.
+  # Define an edge between genes if the Bayesian LLR2 > 0.9
+  adjBayesSubGroup <- (bayesLLR2Mat[subGroupNames, subGroupNames] > 0.9) + 0
+  subnetHierClust <- graph_from_adjacency_matrix(adjBayesSubGroup , mode='undirected', diag=F)
+  
+  # Form a dataframe out of the list of edges in the network, where each row
+  # defines an edge between the genes in columns 1 and 2. Add a third column
+  # containing the prior adjacency matrix value for each of those edges.
+  subnetEdges <- data.frame(as_edgelist(subnetHierClust))
+  colnames(subnetEdges) <- c("Gene1", "Gene2"); subnetEdges$Prior <- 0
+  for(j in 1:nrow(subnetEdges)) {
+    prior <- priorMatrix[subnetEdges[j,"Gene1"], subnetEdges[j,"Gene2"]]
+    subnetEdges$Prior[j] <- prior
+  }
+  
+  # Get the nodes (genes) with at least one edge
+  nodesWithEdges <- unique(c(subnetEdges$Gene1, subnetEdges$Gene2))
+  
+  # Get the nodes (genes) with at least one unknown edge
+  unknownEdges <- subnetEdges[is.na(subnetEdges$Prior),]
+  nodesWithUnknownEdges <- unique(c(unknownEdges$Gene1, unknownEdges$Gene2))
+
+  # Plot the time profiles
+  plotTitle=paste("Cluster ", i, ":  ", length(nodesWithEdges), " genes with at least one edge\n(", length(nodesWithUnknownEdges), " with at least one unknown edge)", sep="")
+  Plot.Gene.Group(nodesWithEdges[! nodesWithEdges %in% nodesWithUnknownEdges], monochrome="darkgray", points=F, 
+                  plotTitle=plotTitle, titleSize=1.5, genesForExtrema=nodesWithEdges)
+  if(length(nodesWithUnknownEdges) > 0) {
+    Plot.Gene.Group(nodesWithUnknownEdges, monochrome="dodgerblue3", points=F, 
+                    plotTitle=plotTitle, titleSize=1.5, add=T) 
+  }
+}
+dev.off(); par(mfrow=c(1,1))   
+
+# For each of the 15 clusters, plot the time profiles of all genes in the cluster,
+# but color only the genes which had at least one unknown edge
 pdf("Output/GeneClusters.pdf", height=11, width=23)
 par(mfrow=c(3,5))
 plotColors <- c(brewer.pal(n=8, name="Dark2"), brewer.pal(n=8, name="Dark2"))

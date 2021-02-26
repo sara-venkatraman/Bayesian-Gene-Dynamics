@@ -23,7 +23,7 @@ Time.Profile.Extrema <- function(genesToPlot) {
   return(list(min=min(minima), max=max(maxima)))
 }
 
-Plot.Gene.Group <- function(genesToPlot, monochrome=F, points=T, titleSize=1, plotTitle) {
+Plot.Gene.Group <- function(genesToPlot, monochrome=F, points=T, titleSize=1, add=F, plotTitle, genesForExtrema) {
   if(monochrome != FALSE) {
     if(monochrome == TRUE)
       plotColors <- rep(alpha("blue", 0.18), length(genesToPlot))
@@ -40,10 +40,16 @@ Plot.Gene.Group <- function(genesToPlot, monochrome=F, points=T, titleSize=1, pl
   else if(plotTitle == TRUE)
     plotTitle <- strwrap(paste(genesToPlot, collapse=", "))
   
-  plotExtrema <- Time.Profile.Extrema(genesToPlot)
+  if(missing(genesForExtrema)) 
+    plotExtrema <- Time.Profile.Extrema(genesToPlot)
+  else
+    plotExtrema <- Time.Profile.Extrema(genesForExtrema)
+
   interp <- Expression.Profile.Interpolant(genesToPlot[1])
   profile <- geneData[genesToPlot[1],]
-  curve(interp, from=0, to=hours[length(hours)], col=plotColors[1], xlab="Time", ylab="Expression (log-fold)", ylim=c(plotExtrema$min, plotExtrema$max), lwd=1.5, main=plotTitle, cex.main=titleSize)
+  curve(interp, from=0, to=hours[length(hours)], col=plotColors[1], xlab="Time", 
+        ylab="Expression (log-fold)", ylim=c(plotExtrema$min, plotExtrema$max), 
+        lwd=1.5, main=plotTitle, cex.main=titleSize, add=add)
   if(points == T) 
     points(hours, profile, pch=20, col=plotColors[1])
   for(i in 2:length(genesToPlot)) {

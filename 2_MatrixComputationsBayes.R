@@ -62,17 +62,21 @@ Get.R2.Bayes <- function(x, y, prior) {
   else
     priorMean <- matrix(c(prior > 0, prior > 0, 0, 0, 0), ncol=1)
 
-  # Compute first LLR2
+  # Compute main LLR2
   LScoefs <- matrix(LLR2model$coefficients, ncol=1)
   LSfit <- matrix(LLR2model$fitted.values, ncol=1)
+  sigmaSq <- norm(y - LSfit, "2")^2 / (n-p)
   if(is.na(prior) || prior > 0) {
-    sigmaSq <- norm(y - LSfit, "2")^2 / (n-p)
     g <- ((norm(LSfit - x %*% priorMean,"2")^2 - p*sigmaSq) / (p*sigmaSq))[1]
   } else
     g <- 1
   posteriorMean <- (1/(1+g))*priorMean + (g/(1+g))*LScoefs
   posteriorFit <- x %*% posteriorMean
   LLR2 <- var(posteriorFit)/(var(posteriorFit) + var(y-posteriorFit))
+  
+  # For F-statistic calculation
+  gReturn <- g
+  sigmaSqReturn <- sigmaSq
 
   # Compute LLR2.other
   LScoefs <- matrix(LLR2model.other$coefficients, ncol=1)
@@ -99,7 +103,7 @@ Get.R2.Bayes <- function(x, y, prior) {
   LLR2.own <- var(posteriorFit)/(var(posteriorFit) + var(y-posteriorFit))
 
   # Combine results into a list
-  list(LLR2, LLR2.other, LLR2.own) 
+  list(LLR2, LLR2.other, LLR2.own, gReturn, sigmaSqReturn) 
 }
 
 # Compute all R^2 values
@@ -128,6 +132,10 @@ bayesLLR2Mat <- Get.R2.Matrix.From.List(genePairs, lapply(R2Bayes, `[[`, 1))
 bayesLLR2Mat.other <- Get.R2.Matrix.From.List(genePairs, lapply(R2Bayes, `[[`, 2))
 bayesLLR2Mat.own <- Get.R2.Matrix.From.List(genePairs, lapply(R2Bayes, `[[`, 3))
 
+# For F-statistic calculations
+gMat <- Get.R2.Matrix.From.List(genePairs, lapply(R2Bayes, `[[`, 4))
+sigmaSqMat <- Get.R2.Matrix.From.List(genePairs, lapply(R2Bayes, `[[`, 5))
+
 # Add in the diagonals
 for (i in seq_along(geneDataList)) {
   bayesLLR2Mat[i,i] <- 1
@@ -139,6 +147,8 @@ for (i in seq_along(geneDataList)) {
 colnames(bayesLLR2Mat) <- rownames(bayesLLR2Mat) <- names(geneDataList)
 colnames(bayesLLR2Mat.other) <- rownames(bayesLLR2Mat.other) <- names(geneDataList)
 colnames(bayesLLR2Mat.own) <- rownames(bayesLLR2Mat.own) <- names(geneDataList)
+colnames(gMat) <- rownames(gMat) <- names(geneDataList)
+colnames(sigmaSqMat) <- rownames(sigmaSqMat) <- names(geneDataList)
 
 # Stop timer and print runtime
 Sys.time() - startTime
@@ -147,3 +157,5 @@ Sys.time() - startTime
 write.csv(bayesLLR2Mat, "BayesLLR2.csv")
 write.csv(bayesLLR2Mat.other, "BayesLLR2_Other.csv")
 write.csv(bayesLLR2Mat.own, "BayesLLR2_Own.csv")
+write.csv(gMat, "G_Matrix.csv")
+write.csv(sigmaSqMat, "SigmaSq_Matrix.csv")
