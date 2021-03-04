@@ -6,6 +6,7 @@ library(latex2exp)
 library(scales)
 library(gplots)
 library(reshape2)
+library(gridExtra)
 
 Expression.Profile.Interpolant <- function(geneName) {
   profile <- geneData[geneName,]
@@ -23,17 +24,22 @@ Time.Profile.Extrema <- function(genesToPlot) {
   return(list(min=min(minima), max=max(maxima)))
 }
 
-Plot.Gene.Group <- function(genesToPlot, monochrome=F, points=T, titleSize=1, add=F, plotTitle, genesForExtrema) {
-  if(monochrome != FALSE) {
-    if(monochrome == TRUE)
+Plot.Gene.Group <- function(genesToPlot, monochrome=F, points=T, 
+                            add=F, legend=F, grid=F, gg=F, plotColors, 
+                            legendSize, legendPos, plotTitle,
+                            titleSize, genesForExtrema) {
+  if(monochrome == TRUE) {
+    if(missing(plotColors))
       plotColors <- rep(alpha("blue", 0.18), length(genesToPlot))
     else
-      plotColors <- rep(alpha(monochrome, 0.2), length(genesToPlot))
+      plotColors <- rep(alpha(plotColor, 0.2), length(genesToPlot))
   } else {
-    plotColors <- c(brewer.pal(n=8, name="Dark2"), 
-                    brewer.pal(n=8, name="Set2"), 
-                    brewer.pal(n=12, name="Paired"),
-                    brewer.pal(n=9, name="Pastel1"))[1:length(genesToPlot)] 
+    if(missing(plotColors)) {
+      plotColors <- c(brewer.pal(n=8, name="Dark2"), 
+                      brewer.pal(n=8, name="Set2"), 
+                      brewer.pal(n=12, name="Paired"),
+                      brewer.pal(n=9, name="Pastel1"))[1:length(genesToPlot)] 
+    }
   }
   if(missing(plotTitle))
     plotTitle = ""
@@ -45,21 +51,66 @@ Plot.Gene.Group <- function(genesToPlot, monochrome=F, points=T, titleSize=1, ad
   else
     plotExtrema <- Time.Profile.Extrema(genesForExtrema)
 
-  interp <- Expression.Profile.Interpolant(genesToPlot[1])
-  profile <- geneData[genesToPlot[1],]
-  curve(interp, from=0, to=hours[length(hours)], col=plotColors[1], xlab="Time", 
-        ylab="Expression (log-fold)", ylim=c(plotExtrema$min, plotExtrema$max), 
-        lwd=1.5, main=plotTitle, cex.main=titleSize, add=add)
-  if(points == T) 
-    points(hours, profile, pch=20, col=plotColors[1])
-  for(i in 2:length(genesToPlot)) {
-    interp <- Expression.Profile.Interpolant(genesToPlot[i])
-    profile <- geneData[genesToPlot[i],]
-    curve(interp, from=0, to=hours[length(hours)], col=plotColors[i], add=T, xlab="Time", ylab="Expression (log-fold)", lwd=1.5)
-    if(points == T)
-      points(hours, profile, pch=20, col=plotColors[i])
+  if(gg == FALSE) {
+    if(missing(titleSize))
+      titleSize <- 1
+    if(missing(legendSize))
+      legendSize <- 1
+    if(missing(legendPos))
+      legendPos <- "bottomright"
+    interp <- Expression.Profile.Interpolant(genesToPlot[1])
+    profile <- geneData[genesToPlot[1],]
+    curve(interp, from=0, to=hours[length(hours)], col=plotColors[1], xlab="Time", 
+            ylab="Expression (log-fold)", ylim=c(plotExtrema$min, plotExtrema$max), 
+            lwd=1.5, main=plotTitle, cex.main=titleSize, add=add)
+    if(grid == T) {
+      grid(col="gray88", lwd=1.2, lty=1)
+      curve(interp, from=0, to=hours[length(hours)], col=plotColors[1], xlab="Time", 
+            ylab="Expression (log-fold)", ylim=c(plotExtrema$min, plotExtrema$max), 
+            lwd=1.5, main=plotTitle, cex.main=titleSize, add=T)
+    }
+    if(points == T) 
+      points(hours, profile, pch=19, col=plotColors[1])
+    for(i in 2:length(genesToPlot)) {
+      interp <- Expression.Profile.Interpolant(genesToPlot[i])
+      profile <- geneData[genesToPlot[i],]
+      curve(interp, from=0, to=hours[length(hours)], col=plotColors[i], add=T, xlab="Time", ylab="Expression (log-fold)", lwd=1.5)
+      if(points == T)
+        points(hours, profile, pch=19, col=plotColors[i])
+    }
+    if(legend == T)
+      legend(legendPos, legend=genesToPlot, col=plotColors, fill=plotColors, cex=legendSize)
+  } else {
+    if(missing(titleSize))
+      titleSize <- 15
+    if(missing(legendSize))
+      legendSize <- 10
+    if(missing(legendPos)) {
+      legendPos <- "bottom"
+    }
+    interpTimes <- seq(from=hours[1], to=hours[length(hours)], length.out=500)
+    interpData <- data.frame(interpTimes, matrix(0, nrow=length(interpTimes), ncol=length(genesToPlot)))
+    exprData <- data.frame(hours, t(geneData[genesToPlot,]))
+    for(i in 1:length(genesToPlot))
+      interpData[,i+1] <- Expression.Profile.Interpolant(genesToPlot[i])(interpTimes)
+    colnames(interpData) <- c("time", genesToPlot)
+    colnames(exprData) <- c("time", genesToPlot)
+    p <- ggplot(melt(interpData, id.var="time"), aes(x=time, y=value, col=variable)) + geom_line() + scale_color_manual(values=plotColors)
+    if(points == TRUE)
+      p <- p + geom_point(data=melt(exprData, id.var="time"), mapping=aes(x=time, y=value, col=variable))
+    p <- p + ggtitle(plotTitle) + theme_bw() + xlab("Time") + ylab("Expression (log-fold)") +
+      theme(plot.title=element_text(size=titleSize)) + theme(plot.title = element_text(hjust = 0.5))
+    if(grid == FALSE)
+      p <- p + theme(panel.grid.major=element_blank(), panel.grid.minor=element_blank())
+    if(legend == TRUE) {
+      p <- p + theme(legend.title=element_blank()) + theme(legend.position=legendPos) +
+        theme(legend.text=element_text(size=legendSize)) + 
+       theme(legend.background=element_rect(size=0.1, linetype="solid", color="black"))
+    } else {
+      p <- p + theme(legend.position = "none")
+    }
+    p
   }
-  # legend("bottomright", legend=genesToPlot, col=plotColors, fill=plotColors, cex=.6) 
 }
 
 Vectorize.Labeled.Square.Matrix <- function(labeledMatrix) {
