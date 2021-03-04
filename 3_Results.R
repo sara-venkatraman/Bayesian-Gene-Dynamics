@@ -264,15 +264,15 @@ dev.off()
 
 # Figure 1, using ggplot
 plotColors <- c("dodgerblue2","orangered2")
-grid.arrange(Plot.Gene.Group(c("bmm","Act87E"), plotTitle="Gene A: bmm;  Gene B: Act87E", legend=T, legendPos="bottom", gg=T, grid=T, titleSize=12, plotColors=plotColors),
-             Plot.Gene.Group(c("Mal-A7","Act79B"), plotTitle="Gene A: Mal-A7;  Gene B: Act79B", legend=T, legendPos="bottom", gg=T, grid=T, titleSize=12, plotColors=plotColors),
-             Plot.Gene.Group(c("tok","IM3"), plotTitle="Gene A: tok;  Gene B: IM3", legend=T, legendPos="bottom", gg=T, grid=T, titleSize=12, plotColors=plotColors), ncol=3)
+grid.arrange(Plot.Gene.Group(c("Act87E", "bmm"), plotTitle="Gene A: Act87E;  Gene B: bmm", legend=T, legendPos="bottom", gg=T, grid=T, titleSize=12, plotColors=plotColors),
+             Plot.Gene.Group(c("Act79B", "Mal-A7"), plotTitle="Gene A: Act79B;  Gene B: Mal-A7", legend=T, legendPos="bottom", gg=T, grid=T, titleSize=12, plotColors=plotColors),
+             Plot.Gene.Group(c("IM3","tok"), plotTitle="Gene A: IM3;  Gene B: tok", legend=T, legendPos="bottom", gg=T, grid=T, titleSize=12, plotColors=plotColors), ncol=3)
 
 # Figure 1, not using ggplot
 par(mfrow=c(1,3))
-Plot.Gene.Group(c("bmm","Act87E"), plotTitle="Gene A: bmm;  Gene B: Act87E", titleSize=1.4, legend=T, legendPos="topleft", gg=F, grid=T, plotColors=plotColors)
+Plot.Gene.Group(c("Act87E", "bmm"), plotTitle="Gene A: Act87E;  Gene B: bmm", titleSize=1.4, legend=T, legendPos="topleft", gg=F, grid=T, plotColors=plotColors)
 Plot.Gene.Group(c("Mal-A7","Act79B"), plotTitle="Gene A: Mal-A7;  Gene B: Act79B", titleSize=1.4, legend=T, legendPos="topleft", gg=F, grid=T, plotColors=plotColors)
-Plot.Gene.Group(c("tok","IM3"), plotTitle="Gene A: tok;  Gene B: IM3", titleSize=1.4, legend=T, legendPos="topright", gg=F, grid=T, plotColors=plotColors)
+Plot.Gene.Group(c("IM3","tok"), plotTitle="Gene A: IM3;  Gene B: tok", titleSize=1.4, legend=T, legendPos="topright", gg=F, grid=T, plotColors=plotColors)
 par(mfrow=c(1,1))
 
 # Print non-Bayes LLR2 values
