@@ -280,4 +280,27 @@ nonBayesLLR2Mat["bmm","Act87E"]
 nonBayesLLR2Mat["Mal-A7","Act79B"]
 nonBayesLLR2Mat["tok","IM3"]
 
+# --- Histograms of R^2 ---
+
+# LLR2 distribution without priors
+histData <- as.data.frame(nonBayesLLR2Mat[upper.tri(nonBayesLLR2Mat)])
+colnames(histData) <- "LLR2"
+h1 <- ggplot(histData, aes(x=LLR2)) + 
+  geom_histogram(mapping=aes(y=..count../sum(..count..)), binwidth=0.02, color="skyblue3", fill="lightsteelblue1") +
+  theme_bw() + xlab(TeX("Lead-lag $R^2$")) + ylab("Density") +
+  ggtitle(TeX("Distribution of lead-lag $R^2$ values without priors")) +
+  theme(plot.title = element_text(hjust = 0.5))
+
+# LLR2 distribution with priors
+histData <- as.data.frame(bayesLLR2Mat[upper.tri(bayesLLR2Mat)])
+colnames(histData) <- "LLR2"
+h2 <- ggplot(histData, aes(x=LLR2)) + 
+  geom_histogram(mapping=aes(y=..count../sum(..count..)), binwidth=0.02, color="skyblue3", fill="lightsteelblue1") +
+  theme_bw() + xlab(TeX("Lead-lag $R^2$")) + ylab("Density") +
+  ggtitle(TeX("Distribution of lead-lag $R^2$ values with priors")) +
+  theme(plot.title = element_text(hjust = 0.5))
+
+grid.arrange(h1, h2, ncol=2)
+
+
 
