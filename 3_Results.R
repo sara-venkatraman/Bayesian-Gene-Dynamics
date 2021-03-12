@@ -322,16 +322,60 @@ for(i in 1:length(table(subGroups))) {
 }
 ggsave(file="Clusters.pdf", arrangeGrob(grobs=plotList, ncol=4), width=12, height=9, units="in")
 
-# --- Imd and Toll regulated genes in cluster 7 ---
+# --- Temporal profile plot of Imd and Toll regulated genes in cluster 7 ---
 
-# Plot of temporal profiles
 imdGenes <- c("AttA", "AttB", "AttC", "AttD", "Dro", "CecA2", "DptA", "DptB", "PGRP-SC2", "PGRP-SB1")
 tollGenes <- c("PGRP-SA", "IM33", "IMPPP", "IM23", "IM1", "IM2", "IM4", "IM14", "IM3")
 newGenes <- c("CR44404", "CG43236", "CG43202", "CG43920")
 Plot.Gene.Group(c(imdGenes, tollGenes, newGenes), plotColors=c(rep("orangered2", 10), rep("dodgerblue3", 9), rep("black", 4)), 
                 plotGrid=T, gg=T, lineLabels=F, plotTitle="Selected genes from cluster 7")
 
-# Network of unknown genes
+# --- Network of unknown genes in cluster 7 ---
 
+# Get the entire network
+adjBayes <- (bayesLLR2Mat > 0.9) + 0
+networkBayes <- graph_from_adjacency_matrix(adjBayes , mode='undirected', diag=F)
 
+# Get all the neighbors of the unknown genes in cluster 7
+unknownC7neighbors <- adjacent_vertices(networkBayes, newGenes)
 
+# Collapse this list of neighbors into one vector of nodes
+allNodes <- c()
+for(j in 1:length(unknownC7neighbors))
+  allNodes <- c(allNodes, names(unknownC7neighbors[j]), names(unknownC7neighbors[[j]]))
+allNodes <- unique(allNodes)
+
+# Form a new subnetwork out of allNodes
+C7adj <- (bayesLLR2Mat[allNodes, allNodes] > 0.9) + 0
+C7net <- graph_from_adjacency_matrix(C7adj , mode='undirected', diag=F)
+
+# Get a new dataframe of edges corresponding to allNodes
+C7edges <- data.frame(as_edgelist(C7net))
+colnames(C7edges) <- c("Gene1", "Gene2"); C7edges$Prior <- 0
+for(j in 1:nrow(C7edges)) {
+  prior <- priorMatrix[C7edges[j,"Gene1"], C7edges[j,"Gene2"]]
+  C7edges$Prior[j] <- prior
+}
+
+# Edges between genes with unknown associations will be blue, and edges 
+# for known associations will be red
+E(C7net)$color[is.na(C7edges$Prior)] <- alpha('blue', 0.7)
+E(C7net)$color[!is.na(C7edges$Prior)] <- alpha('red', 0.7)
+
+# The four novel genes will be colored differently
+V(C7net)$color[as_ids(V(C7net)) %in% newGenes] <- alpha("navajowhite", 0.95)
+V(C7net)$color[! as_ids(V(C7net)) %in% newGenes] <- alpha("linen", 0.85)
+
+# Node frame colors
+V(C7net)$frame.color[as_ids(V(C7net)) %in% newGenes] <- "peachpuff3"
+V(C7net)$frame.color[! as_ids(V(C7net)) %in% newGenes] <- "gray66"
+
+# Plot the new subnetwork for cluster 7 on a PDF
+numUnknownEdges <- sum(is.na(C7edges$Prior))
+numKnownEdges <- sum(!is.na(C7edges$Prior))
+pdf("Output/Cluster7Subnetwork.pdf", height=6, width=6)
+plotTitle <- paste("New relationships detected in cluster 7\n(", length(allNodes), " genes; ", numKnownEdges, " known edges, ", numUnknownEdges, " newly-identified edges)", sep="")
+plot(C7net, layout=layout_with_kk, vertex.size=21, vertex.label.family="Helvetica",
+     vertex.label.cex=0.5, edge.width=1.2)
+title(plotTitle, cex.main=0.8)
+dev.off()
