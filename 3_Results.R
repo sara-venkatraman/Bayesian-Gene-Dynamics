@@ -374,8 +374,62 @@ V(C7net)$frame.color[! as_ids(V(C7net)) %in% newGenes] <- "gray66"
 numUnknownEdges <- sum(is.na(C7edges$Prior))
 numKnownEdges <- sum(!is.na(C7edges$Prior))
 pdf("Output/Cluster7Subnetwork.pdf", height=6, width=6)
-plotTitle <- paste("New relationships detected in cluster 7\n(", length(allNodes), " genes; ", numKnownEdges, " known edges, ", numUnknownEdges, " newly-identified edges)", sep="")
-plot(C7net, layout=layout_with_kk, vertex.size=21, vertex.label.family="Helvetica",
+plotTitle <- paste("New relationships detected in cluster 7\n(", length(allNodes), " genes; ", numKnownEdges, " previously-known edges, ", numUnknownEdges, " newly-identified edges)", sep="")
+plot(C7net, layout=layout_with_lgl, vertex.size=21, vertex.label.family="Helvetica",
      vertex.label.cex=0.5, edge.width=1.2)
-title(plotTitle, cex.main=0.8)
+title(plotTitle, cex.main=0.8, font.main=1)
 dev.off()
+
+# --- Network of neighbors of gene "fbp" in cluster 12 ---
+
+# Get all the neighbors of fbp
+fbpNeighbors <- adjacent_vertices(networkBayes, "fbp")
+fbpNeighbors <- c("fbp", names(fbpNeighbors[[1]]))
+
+# Form a new subnetwork out of fbp and neighborrs
+fbpAdj <- (bayesLLR2Mat[fbpNeighbors, fbpNeighbors] > 0.9) + 0
+fbpNet <- graph_from_adjacency_matrix(fbpAdj , mode='undirected', diag=F)
+
+# Get a new dataframe of edges corresponding to fbpNeighbors
+fbpEdges <- data.frame(as_edgelist(fbpNet))
+colnames(fbpEdges) <- c("Gene1", "Gene2"); fbpEdges$Prior <- 0
+for(j in 1:nrow(fbpEdges)) {
+  prior <- priorMatrix[fbpEdges[j,"Gene1"], fbpEdges[j,"Gene2"]]
+  fbpEdges$Prior[j] <- prior
+}
+
+# Edges between genes with unknown associations will be blue, and edges 
+# for known associations will be red
+E(fbpNet)$color[is.na(fbpEdges$Prior)] <- alpha('blue', 0.1)
+E(fbpNet)$color[!is.na(fbpEdges$Prior)] <- alpha('red', 0.1)
+
+# The fbp gene will be colored differently
+V(fbpNet)$color[as_ids(V(fbpNet)) == "fbp"] <- "navajowhite"
+V(fbpNet)$color[! as_ids(V(fbpNet)) == "fbp"] <- alpha("linen", 0.85)
+
+# Node frame colors
+V(fbpNet)$frame.color[as_ids(V(fbpNet)) == "fbp"] <- "peachpuff3"
+V(fbpNet)$frame.color[! as_ids(V(fbpNet)) == "fbp"] <- "gray66"
+
+# Node sizes (a few highlighted nodes will be larger)
+fbpNetHighlightNodes <- c("fbp", "Galk", "AGBE", "Gba1b", "CG11594", "CG10469", "CG13315") 
+V(fbpNet)$size[as_ids(V(fbpNet)) %in% fbpNetHighlightNodes] <- 17
+V(fbpNet)$size[! as_ids(V(fbpNet)) %in% fbpNetHighlightNodes] <- 7
+
+# Node names (text only for highlighted nodes)
+V(fbpNet)$label[! as_ids(V(fbpNet)) %in% fbpNetHighlightNodes] <- NA
+V(fbpNet)$label[as_ids(V(fbpNet)) %in% fbpNetHighlightNodes] <- fbpNetHighlightNodes
+
+# Darken edges for the highlighted nodes
+E(fbpNet)$color[which(fbpEdges$Gene1 == "fbp" & fbpEdges$Gene2 %in% fbpNetHighlightNodes)] <- "blue"
+
+# Plot the new subnetwork for fbp on a PDF
+numUnknownEdges <- sum(is.na(fbpEdges$Prior))
+numKnownEdges <- sum(!is.na(fbpEdges$Prior))
+pdf("Output/fbpSubnetwork.pdf", height=6, width=6)
+plotTitle <- paste("Neighbors of gene \"fbp\" in cluster 12\n(", length(allNodes), " genes; ", numKnownEdges, " known edges, ", numUnknownEdges, " newly-identified edges)", sep="")
+plot(fbpNet, layout=layout_with_kk, vertex.label.family="Helvetica",
+     vertex.label.cex=0.5, edge.width=1.2)
+title(plotTitle, cex.main=0.8, font.main=1)
+dev.off()
+
