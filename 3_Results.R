@@ -161,7 +161,8 @@ for(i in 1:length(table(subGroups))) {
 }
 dev.off()
 
-# For each of the 15 clusters, plot the time profiles of all genes in the cluster
+# For each of the 15 clusters, plot the time profiles of all genes in the cluster,
+# but color only the genes which had at least one unknown edge
 pdf("Output/GeneClustersWithUnknownAssociations.pdf", height=11, width=23)
 par(mfrow=c(3,5))
 plotColors <- c(brewer.pal(n=8, name="Dark2"), brewer.pal(n=8, name="Dark2"))
@@ -202,8 +203,8 @@ for(i in 1:length(table(subGroups))) {
 }
 dev.off(); par(mfrow=c(1,1))   
 
-# For each of the 15 clusters, plot the time profiles of all genes in the cluster,
-# but color only the genes which had at least one unknown edge
+
+# For each of the 15 clusters, plot the time profiles of all genes in the cluster
 pdf("Output/GeneClusters.pdf", height=11, width=23)
 par(mfrow=c(3,5))
 plotColors <- c(brewer.pal(n=8, name="Dark2"), brewer.pal(n=8, name="Dark2"))
@@ -262,17 +263,19 @@ dev.off()
 
 # --- Plots for manuscript ---
 
-# Figure 1, using ggplot
-plotColors <- c("dodgerblue2","orangered2")
-grid.arrange(Plot.Gene.Group(c("Act87E", "bmm"), plotTitle="Gene A: Act87E;  Gene B: bmm", legend=T, legendPos="bottom", gg=T, grid=T, titleSize=12, plotColors=plotColors),
-             Plot.Gene.Group(c("Act79B", "Mal-A7"), plotTitle="Gene A: Act79B;  Gene B: Mal-A7", legend=T, legendPos="bottom", gg=T, grid=T, titleSize=12, plotColors=plotColors),
-             Plot.Gene.Group(c("IM3","tok"), plotTitle="Gene A: IM3;  Gene B: tok", legend=T, legendPos="bottom", gg=T, grid=T, titleSize=12, plotColors=plotColors), ncol=3)
+# --- Inflated LLR^2 (Figure 1) ---
 
-# Figure 1, not using ggplot
+# Using ggplot
+plotColors <- c("dodgerblue2","orangered2")
+grid.arrange(Plot.Gene.Group(c("Act87E", "bmm"), plotTitle="Gene A: Act87E;  Gene B: bmm", plotLegend=T, legendPos="bottom", gg=T, plotGrid=T, titleSize=12, plotColors=plotColors),
+             Plot.Gene.Group(c("Act79B", "Mal-A7"), plotTitle="Gene A: Act79B;  Gene B: Mal-A7", plotLegend=T, legendPos="bottom", gg=T, plotGrid=T, titleSize=12, plotColors=plotColors),
+             Plot.Gene.Group(c("IM3","tok"), plotTitle="Gene A: IM3;  Gene B: tok", plotLegend=T, legendPos="bottom", gg=T, plotGrid=T, titleSize=12, plotColors=plotColors), ncol=3)
+
+# Not using ggplot
 par(mfrow=c(1,3))
-Plot.Gene.Group(c("Act87E", "bmm"), plotTitle="Gene A: Act87E;  Gene B: bmm", titleSize=1.4, legend=T, legendPos="topleft", gg=F, grid=T, plotColors=plotColors)
-Plot.Gene.Group(c("Mal-A7","Act79B"), plotTitle="Gene A: Mal-A7;  Gene B: Act79B", titleSize=1.4, legend=T, legendPos="topleft", gg=F, grid=T, plotColors=plotColors)
-Plot.Gene.Group(c("IM3","tok"), plotTitle="Gene A: IM3;  Gene B: tok", titleSize=1.4, legend=T, legendPos="topright", gg=F, grid=T, plotColors=plotColors)
+Plot.Gene.Group(c("Act87E", "bmm"), plotTitle="Gene A: Act87E;  Gene B: bmm", titleSize=1.4, plotLegend=T, legendPos="topleft", gg=F, grid=T, plotColors=plotColors)
+Plot.Gene.Group(c("Mal-A7","Act79B"), plotTitle="Gene A: Mal-A7;  Gene B: Act79B", titleSize=1.4, plotLegend=T, legendPos="topleft", gg=F, grid=T, plotColors=plotColors)
+Plot.Gene.Group(c("IM3","tok"), plotTitle="Gene A: IM3;  Gene B: tok", titleSize=1.4, plotLegend=T, legendPos="topright", gg=F, grid=T, plotColors=plotColors)
 par(mfrow=c(1,1))
 
 # Print non-Bayes LLR2 values
@@ -301,6 +304,34 @@ h2 <- ggplot(histData, aes(x=LLR2)) +
   theme(plot.title = element_text(hjust = 0.5))
 
 grid.arrange(h1, h2, ncol=2)
+
+# --- Known and uncharacterized genes (Figure 2) ---
+
+grid.arrange(Plot.Gene.Group(c("per", "tim", "to", "vri", "CG11854", "CG18609", "Pdp1", "CG33511"), gg=T, plotGrid=T,plotLegend=T, plotTitle="Known and uncharacterized genes\n with circadian rhythm patterns"),
+             Plot.Gene.Group(c("AttC", "DptA", "DptB", "Dro", "edin", "Mtk", "CG43920", "CR44404", "CR45045"), gg=T, plotGrid=T,plotLegend=T, plotTitle="Known and uncharacterized genes\n with immune response functions"), ncol=2)
+
+# Also involved in immune response: "IM1", "IM14", "IM2", "IM23", "IM3", "IM33", "IM4", "IMPPP"
+
+# --- Time profiles in each cluster, with ggplot ---
+
+clusterColors <- c("darkorange3", "dodgerblue3", "forestgreen", "darkmagenta", "indianred2", "orange4", "navy", "red2", "blueviolet", "turquoise4", "olivedrab", "darkslategray", "antiquewhite4", "coral4", "goldenrod2")
+monochrome <- T;  points <- F;  plotGrid <- T;  gg <- T;  titleSize <- 12;
+plotList <- list()
+for(i in 1:length(table(subGroups))) {
+  plotList[[i]] <- Plot.Gene.Group(geneNames[subGroups == i], plotTitle=paste("Cluster ", i, " (", table(subGroups)[i], " genes)", sep=""), plotColors=clusterColors[i], monochrome=monochrome, points=points, gg=gg, plotGrid=plotGrid, titleSize=titleSize)  
+}
+ggsave(file="Clusters.pdf", arrangeGrob(grobs=plotList, ncol=4), width=12, height=9, units="in")
+
+# --- Imd and Toll regulated genes in cluster 7 ---
+
+# Plot of temporal profiles
+imdGenes <- c("AttA", "AttB", "AttC", "AttD", "Dro", "CecA2", "DptA", "DptB", "PGRP-SC2", "PGRP-SB1")
+tollGenes <- c("PGRP-SA", "IM33", "IMPPP", "IM23", "IM1", "IM2", "IM4", "IM14", "IM3")
+newGenes <- c("CR44404", "CG43236", "CG43202", "CG43920")
+Plot.Gene.Group(c(imdGenes, tollGenes, newGenes), plotColors=c(rep("orangered2", 10), rep("dodgerblue3", 9), rep("black", 4)), 
+                plotGrid=T, gg=T, lineLabels=F, plotTitle="Selected genes from cluster 7")
+
+# Network of unknown genes
 
 
 
