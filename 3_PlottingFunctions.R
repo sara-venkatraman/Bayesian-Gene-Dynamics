@@ -7,6 +7,7 @@ library(scales)
 library(gplots)
 library(reshape2)
 library(gridExtra)
+library(directlabels)
 
 Expression.Profile.Interpolant <- function(geneName) {
   profile <- geneData[geneName,]
@@ -25,14 +26,15 @@ Time.Profile.Extrema <- function(genesToPlot) {
 }
 
 Plot.Gene.Group <- function(genesToPlot, monochrome=F, points=T, 
-                            add=F, legend=F, grid=F, gg=F, plotColors, 
+                            add=F, plotLegend=F, plotGrid=F, gg=F, 
+                            lineLabels=F, plotColors, 
                             legendSize, legendPos, plotTitle,
                             titleSize, genesForExtrema) {
   if(monochrome == TRUE) {
     if(missing(plotColors))
       plotColors <- rep(alpha("blue", 0.18), length(genesToPlot))
     else
-      plotColors <- rep(alpha(plotColor, 0.2), length(genesToPlot))
+      plotColors <- rep(alpha(plotColors, 0.2), length(genesToPlot))
   } else {
     if(missing(plotColors)) {
       plotColors <- c(brewer.pal(n=8, name="Dark2"), 
@@ -63,7 +65,7 @@ Plot.Gene.Group <- function(genesToPlot, monochrome=F, points=T,
     curve(interp, from=0, to=hours[length(hours)], col=plotColors[1], xlab="Time", 
             ylab="Expression (log-fold)", ylim=c(plotExtrema$min, plotExtrema$max), 
             lwd=1.5, main=plotTitle, cex.main=titleSize, add=add)
-    if(grid == T) {
+    if(plotGrid == T) {
       grid(col="gray88", lwd=1.2, lty=1)
       curve(interp, from=0, to=hours[length(hours)], col=plotColors[1], xlab="Time", 
             ylab="Expression (log-fold)", ylim=c(plotExtrema$min, plotExtrema$max), 
@@ -78,7 +80,7 @@ Plot.Gene.Group <- function(genesToPlot, monochrome=F, points=T,
       if(points == T)
         points(hours, profile, pch=19, col=plotColors[i])
     }
-    if(legend == T)
+    if(plotLegend == T)
       legend(legendPos, legend=genesToPlot, col=plotColors, fill=plotColors, cex=legendSize)
   } else {
     if(missing(titleSize))
@@ -98,18 +100,21 @@ Plot.Gene.Group <- function(genesToPlot, monochrome=F, points=T,
     p <- ggplot(melt(interpData, id.var="time"), aes(x=time, y=value, col=variable)) + geom_line() + scale_color_manual(values=plotColors)
     if(points == TRUE)
       p <- p + geom_point(data=melt(exprData, id.var="time"), mapping=aes(x=time, y=value, col=variable))
-    p <- p + ggtitle(plotTitle) + theme_bw() + xlab("Time") + ylab("Expression (log-fold)") +
-      theme(plot.title=element_text(size=titleSize)) + theme(plot.title = element_text(hjust = 0.5))
-    if(grid == FALSE)
+    p <- p + ggtitle(plotTitle) + theme_bw() + xlab("Hours after infection") + ylab(TeX("Expression ($\\log_2$-fold change)")) +
+      theme(plot.title=element_text(size=titleSize)) + theme(plot.title = element_text(hjust=0.5))
+    if(plotGrid == FALSE)
       p <- p + theme(panel.grid.major=element_blank(), panel.grid.minor=element_blank())
-    if(legend == TRUE) {
+    if(lineLabels == TRUE) {
+      p <- p + geom_dl(aes(label=variable), method=list(dl.trans(x=x+0.2), "last.points", cex=0.6)) +
+        expand_limits(x=53)
+      }
+    if(plotLegend == TRUE) {
       p <- p + theme(legend.title=element_blank()) + theme(legend.position=legendPos) +
         theme(legend.text=element_text(size=legendSize)) + 
-       theme(legend.background=element_rect(size=0.1, linetype="solid", color="black"))
-    } else {
+        theme(legend.background=element_rect(size=0.1, linetype="solid", color="black"))
+    } else
       p <- p + theme(legend.position = "none")
-    }
-    p
+    return(p)
   }
 }
 
