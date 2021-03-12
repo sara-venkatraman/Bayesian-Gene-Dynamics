@@ -318,7 +318,7 @@ clusterColors <- c("darkorange3", "dodgerblue3", "forestgreen", "darkmagenta", "
 monochrome <- T;  points <- F;  plotGrid <- T;  gg <- T;  titleSize <- 12;
 plotList <- list()
 for(i in 1:length(table(subGroups))) {
-  plotList[[i]] <- Plot.Gene.Group(geneNames[subGroups == i], plotTitle=paste("Cluster ", i, " (", table(subGroups)[i], " genes)", sep=""), plotColors=clusterColors[i], monochrome=monochrome, points=points, gg=gg, plotGrid=plotGrid, titleSize=titleSize)  
+  plotList[[i]] <- Plot.Gene.Group(geneNames[subGroups == i], plotTitle=paste("Cluster ", i, " (", table(subGroups)[i], " genes)", sep=""), plotColors=clusterColors[i], monochrome=monochrome, points=points, gg=gg, plotGrid=plotGrid, titleSize=titleSize)
 }
 ggsave(file="Clusters.pdf", arrangeGrob(grobs=plotList, ncol=4), width=12, height=9, units="in")
 
@@ -327,8 +327,10 @@ ggsave(file="Clusters.pdf", arrangeGrob(grobs=plotList, ncol=4), width=12, heigh
 imdGenes <- c("AttA", "AttB", "AttC", "AttD", "Dro", "CecA2", "DptA", "DptB", "PGRP-SC2", "PGRP-SB1")
 tollGenes <- c("PGRP-SA", "IM33", "IMPPP", "IM23", "IM1", "IM2", "IM4", "IM14", "IM3")
 newGenes <- c("CR44404", "CG43236", "CG43202", "CG43920")
-Plot.Gene.Group(c(imdGenes, tollGenes, newGenes), plotColors=c(rep("orangered2", 10), rep("dodgerblue3", 9), rep("black", 4)), 
-                plotGrid=T, gg=T, lineLabels=F, plotTitle="Selected genes from cluster 7")
+negativeGenes <- c("Acp1", "CG7214")
+C7colors <- c(rep(alpha("orangered2", 0.65), 10), rep(alpha("dodgerblue3", 0.65), 9), rep(alpha("black", 0.65), 4), rep(alpha("forestgreen", 0.65), 2))
+Plot.Gene.Group(c(imdGenes, tollGenes, newGenes, negativeGenes), plotColors=C7colors, 
+                plotGrid=T, gg=T, points=T, lineLabels=F, plotTitle="Selected genes from cluster 7")
 
 # --- Network of unknown genes in cluster 7 ---
 
@@ -380,6 +382,13 @@ plot(C7net, layout=layout_with_lgl, vertex.size=21, vertex.label.family="Helveti
 title(plotTitle, cex.main=0.8, font.main=1)
 dev.off()
 
+# --- Temporal profile plot selected genes in cluster 12 ---
+
+C12genes <- c("fbp", "to", "AGBE", "Galk", "Gba1b", "CG11594", "CG10469", "CG13315")
+C12colors <- c("black", "dodgerblue2", rep("orangered2", 3), rep("springgreen4", 3))
+Plot.Gene.Group(C12genes, plotColors=C12colors, plotGrid=T, gg=T, lineLabels=F,
+                plotTitle="Selected genes from cluster 12", pointSize=1)
+
 # --- Network of neighbors of gene "fbp" in cluster 12 ---
 
 # Get all the neighbors of fbp
@@ -427,7 +436,7 @@ E(fbpNet)$color[which(fbpEdges$Gene1 == "fbp" & fbpEdges$Gene2 %in% fbpNetHighli
 numUnknownEdges <- sum(is.na(fbpEdges$Prior))
 numKnownEdges <- sum(!is.na(fbpEdges$Prior))
 pdf("Output/fbpSubnetwork.pdf", height=6, width=6)
-plotTitle <- paste("Neighbors of gene \"fbp\" in cluster 12\n(", length(allNodes), " genes; ", numKnownEdges, " known edges, ", numUnknownEdges, " newly-identified edges)", sep="")
+plotTitle <- paste("Neighbors of gene \"fbp\" in cluster 12\n(", length(fbpNeighbors), " genes; ", numKnownEdges, " known edges, ", numUnknownEdges, " newly-identified edges)", sep="")
 plot(fbpNet, layout=layout_with_kk, vertex.label.family="Helvetica",
      vertex.label.cex=0.5, edge.width=1.2)
 title(plotTitle, cex.main=0.8, font.main=1)

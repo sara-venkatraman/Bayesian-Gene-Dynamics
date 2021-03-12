@@ -27,8 +27,8 @@ Time.Profile.Extrema <- function(genesToPlot) {
 
 Plot.Gene.Group <- function(genesToPlot, monochrome=F, points=T, 
                             add=F, plotLegend=F, plotGrid=F, gg=F, 
-                            lineLabels=F, plotColors, 
-                            legendSize, legendPos, plotTitle,
+                            lineLabels=F, pointSize=1.5, lineOpacity=1,
+                            plotColors, legendSize, legendPos, plotTitle,
                             titleSize, genesForExtrema) {
   if(monochrome == TRUE) {
     if(missing(plotColors))
@@ -39,10 +39,15 @@ Plot.Gene.Group <- function(genesToPlot, monochrome=F, points=T,
     if(missing(plotColors)) {
       plotColors <- c(brewer.pal(n=8, name="Dark2"), 
                       brewer.pal(n=8, name="Set2"), 
-                      brewer.pal(n=12, name="Paired"),
-                      brewer.pal(n=9, name="Pastel1"))[1:length(genesToPlot)] 
+                      brewer.pal(n=12, name="Paired"))
+      if(length(genesToPlot) <= length(plotColors))
+        plotColors <- plotColors[1:length(genesToPlot)]
+      else
+        plotColors <- rep(plotColors, 20)[1:length(genesToPlot)]
     }
   }
+  if(lineOpacity != 1)
+    plotColors <- alpha(plotColors, lineOpacity)
   if(missing(plotTitle))
     plotTitle = ""
   else if(plotTitle == TRUE)
@@ -99,7 +104,7 @@ Plot.Gene.Group <- function(genesToPlot, monochrome=F, points=T,
     colnames(exprData) <- c("time", genesToPlot)
     p <- ggplot(melt(interpData, id.var="time"), aes(x=time, y=value, col=variable)) + geom_line() + scale_color_manual(values=plotColors)
     if(points == TRUE)
-      p <- p + geom_point(data=melt(exprData, id.var="time"), mapping=aes(x=time, y=value, col=variable))
+      p <- p + geom_point(data=melt(exprData, id.var="time"), mapping=aes(x=time, y=value, col=variable), size=pointSize) 
     p <- p + ggtitle(plotTitle) + theme_bw() + xlab("Hours after infection") + ylab(TeX("Expression ($\\log_2$-fold change)")) +
       theme(plot.title=element_text(size=titleSize)) + theme(plot.title = element_text(hjust=0.5))
     if(plotGrid == FALSE)
