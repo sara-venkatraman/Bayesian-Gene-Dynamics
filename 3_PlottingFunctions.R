@@ -65,14 +65,21 @@ Plot.Gene.Group <- function(genesToPlot, monochrome=F, points=T,
   if(missing(legendPos)) {
     legendPos <- "bottom"
   }
-  interpTimes <- seq(from=hours[1], to=hours[length(hours)], length.out=500)
-  interpData <- data.frame(interpTimes, matrix(0, nrow=length(interpTimes), ncol=length(genesToPlot)))
+  
   exprData <- data.frame(hours, t(geneData[genesToPlot,]))
-  for(i in 1:length(genesToPlot))
-    interpData[,i+1] <- Expression.Profile.Interpolant(genesToPlot[i])(interpTimes)
-  colnames(interpData) <- c("time", genesToPlot)
   colnames(exprData) <- c("time", genesToPlot)
-  p <- ggplot(melt(interpData, id.var="time"), aes(x=time, y=value, col=variable)) + geom_line() + scale_color_manual(values=plotColors)
+  
+  if(useSplines == T) {
+    interpTimes <- seq(from=hours[1], to=hours[length(hours)], length.out=500)
+    interpData <- data.frame(interpTimes, matrix(0, nrow=length(interpTimes), ncol=length(genesToPlot)))  
+    for(i in 1:length(genesToPlot))
+      interpData[,i+1] <- Expression.Profile.Interpolant(genesToPlot[i])(interpTimes)
+    colnames(interpData) <- c("time", genesToPlot)
+    
+    p <- ggplot(melt(interpData, id.var="time"), aes(x=time, y=value, col=variable)) + geom_line() + scale_color_manual(values=plotColors)
+  } else {
+    p <- ggplot(melt(exprData, id.var="time"), aes(x=time, y=value, col=variable)) + geom_line() + scale_color_manual(values=plotColors)
+  }
   if(points == TRUE)
     p <- p + geom_point(data=melt(exprData, id.var="time"), mapping=aes(x=time, y=value, col=variable), size=pointSize) 
   p <- p + ggtitle(plotTitle) + theme_bw() + xlab("Hours after infection") + ylab(TeX("Expression ($\\log_2$-fold change)")) +
