@@ -315,7 +315,7 @@ grid.arrange(Plot.Gene.Group(c("per", "tim", "to", "vri", "CG11854", "CG18609", 
 # --- Time profiles in each cluster, with ggplot ---
 
 clusterColors <- c("darkorange3", "dodgerblue3", "forestgreen", "darkmagenta", "indianred2", "orange4", "navy", "red2", "blueviolet", "turquoise4", "olivedrab", "darkslategray", "antiquewhite4", "coral4", "goldenrod2")
-monochrome <- T;  points <- F;  plotGrid <- T;  gg <- T;  titleSize <- 12;
+monochrome <- T;  points <- F;  plotGrid <- T;  gg <- T;  titleSize <- 12
 plotList <- list()
 for(i in 1:length(table(subGroups))) {
   plotList[[i]] <- Plot.Gene.Group(geneNames[subGroups == i], plotTitle=paste("Cluster ", i, " (", table(subGroups)[i], " genes)", sep=""), plotColors=clusterColors[i], monochrome=monochrome, points=points, gg=gg, plotGrid=plotGrid, titleSize=titleSize)
