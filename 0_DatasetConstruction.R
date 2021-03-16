@@ -286,3 +286,22 @@ rownames(priorMatrix) <- geneNames;  colnames(priorMatrix) <- geneNames
 
 # Write to CSV
 write.csv(priorMatrix, paste("../Processed Data/", subdirectory, "/PriorMatrix.csv", sep=""))
+
+# --- Create a prior information matrix for the post-mating response data ---
+
+stringDBMatrix <- read.csv("../Processed Data/Prior Matrices/Dme_STRING_matrix.csv", header=T, row.names=1)
+load("../Processed Data/Post-Mating Response/C_expr_matrix.RData")
+geneData <- Cdata;  remove(Cdata)
+geneNames <- rownames(geneData)
+
+priorMatrixString <- matrix(NA, nrow(geneData), nrow(geneData))
+rownames(priorMatrixString) <- geneNames;  colnames(priorMatrixString) <- geneNames
+availableStringPrior <- as.matrix(stringDBMatrix[geneNames[geneNames %in% rownames(stringDBMatrix)], geneNames[geneNames %in% rownames(stringDBMatrix)]])
+priorMatrixString[geneNames[geneNames %in% rownames(stringDBMatrix)], geneNames[geneNames %in% rownames(stringDBMatrix)]] <- availableStringPrior
+priorMatrixString[priorMatrixString <= 500] <- 0
+priorMatrixString[priorMatrixString > 0] <- 1
+
+write.csv(priorMatrixString, "../Processed Data/Post-Mating Response/PriorMatrix.csv")
+
+
+

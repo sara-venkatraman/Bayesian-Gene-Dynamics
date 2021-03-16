@@ -39,7 +39,6 @@ genePairsAsList <- lapply(genePairsAsList, as.list)
 X <- mclapply(genePairsAsList, function(pair) do.call(Get.Design.Matrix, pair))
 
 Get.Prior.Indicator <- function(idx1, idx2) {
-  # (priorMatrix[idx1, idx2] > 0) + 0
   priorMatrix[idx1, idx2]
 }
 
