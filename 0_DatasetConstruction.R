@@ -275,8 +275,14 @@ priorMatrixRep <- (cor(t(normCountsRep1)) + cor(t(normCountsRep2)))/2
 priorMatrixRep[abs(priorMatrixRep) < 0.8] <- 0
 
 # Combine the priors (1 = associated, NA = unknown, 0 = not associated)
+
+# First, fill in "1"s for high correlations in replicate data
 priorMatrix <- (priorMatrixRep != 0) + 0      # Store 1's from replicate data
+
+# Now, fill in "1"s for high STRING scores
 priorMatrix[priorMatrixString > 0] <- 1       # Store 1's from STRING scores
+
+# Now if they did not exist in STRING, they're unknown here
 priorMatrix[is.na(priorMatrixString)] <- NA   # Replace STRING unknowns with NA
 rownames(priorMatrix) <- geneNames;  colnames(priorMatrix) <- geneNames
 
