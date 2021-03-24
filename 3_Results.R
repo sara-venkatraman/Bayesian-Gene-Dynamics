@@ -291,19 +291,41 @@ colnames(histData) <- "LLR2"
 h1 <- ggplot(histData, aes(x=LLR2)) + 
   geom_histogram(mapping=aes(y=..count../sum(..count..)), binwidth=0.02, color="skyblue3", fill="lightsteelblue1") +
   theme_bw() + xlab(TeX("Lead-lag $R^2$")) + ylab("Density") +
-  ggtitle(TeX("Distribution of lead-lag $R^2$ values without priors")) +
+  ggtitle(TeX("Distribution of lead-lag $R^2$ values (without priors)")) +
   theme(plot.title = element_text(hjust = 0.5))
+h1
+
+# 95th percentile of this distribution = 0.9479654 (0.95)
+quantile(histData$LLR2, 0.95)
 
 # LLR2 distribution with priors
 histData <- as.data.frame(bayesLLR2Mat[upper.tri(bayesLLR2Mat)])
 colnames(histData) <- "LLR2"
 h2 <- ggplot(histData, aes(x=LLR2)) + 
   geom_histogram(mapping=aes(y=..count../sum(..count..)), binwidth=0.02, color="skyblue3", fill="lightsteelblue1") +
-  theme_bw() + xlab(TeX("Lead-lag $R^2$")) + ylab("Density") +
-  ggtitle(TeX("Distribution of lead-lag $R^2$ values with priors")) +
+  theme_bw() + xlab(TeX("Bayesian lead-lag $R^2$")) + ylab("Density") +
+  ggtitle(TeX("Distribution of Bayesian lead-lag $R^2$ values")) +
   theme(plot.title = element_text(hjust = 0.5))
+h2
 
+# 95th percentile of this distribution = 0.7239886 (0.72)
+quantile(histData$LLR2, 0.95)
+
+# Side-by-side histograms
 grid.arrange(h1, h2, ncol=2)
+
+# LLR2 - LLR2.own distribution, with priors
+histData <- as.data.frame(bayesLLR2Mat[upper.tri(bayesLLR2Mat)] - bayesLLR2Mat.own[upper.tri(bayesLLR2Mat.own)])
+colnames(histData) <- "LLR2_diff"
+h3 <- ggplot(histData, aes(x=LLR2_diff)) + 
+  geom_histogram(mapping=aes(y=..count../sum(..count..)), binwidth=0.02, color="skyblue3", fill="lightsteelblue1") +
+  theme_bw() + xlab(TeX("Bayesian LL$R^2$ - LL$R^2_{own}$")) + ylab("Density") +
+  ggtitle(TeX("Distribution of Bayesian LL$R^2$ - LL$R^2_{own}$ values")) +
+  theme(plot.title = element_text(hjust = 0.5))
+h3
+
+# 95th quantile of this distribution = 0.2167662 (0.22)
+quantile(histData$LLR2_diff, 0.95)
 
 # --- Known and uncharacterized genes (Figure 2) ---
 
@@ -386,8 +408,9 @@ dev.off()
 
 C12genes <- c("fbp", "to", "AGBE", "Galk", "Gba1b", "CG11594", "CG10469", "CG13315")
 C12colors <- c("black", "dodgerblue2", rep("orangered2", 3), rep("springgreen4", 3))
-Plot.Gene.Group(C12genes, plotColors=C12colors, plotGrid=T, gg=T, lineLabels=F,
-                plotTitle="Selected genes from cluster 12", pointSize=1)
+Plot.Gene.Group(C12genes, plotColors=C12colors, plotGrid=T, lineLabels=T,
+                plotTitle="Selected genes from cluster 12", pointSize=1,
+                plotLegend=T)
 
 # --- Network of neighbors of gene "fbp" in cluster 12 ---
 
@@ -441,4 +464,18 @@ plot(fbpNet, layout=layout_with_kk, vertex.label.family="Helvetica",
      vertex.label.cex=0.5, edge.width=1.2)
 title(plotTitle, cex.main=0.8, font.main=1)
 dev.off()
+
+# --- Small-scale case study (immune response/metabolism) ---
+
+immMetGenes <- c("IM1", "IM2", "FASN1", "UGP", "mino", "fbp")
+Plot.Gene.Group(immMetGenes, plotGrid=T, plotLegend=T, plotTitle="Subset of genes involved in immune response\n (IM1, IM2) and metabolism (FASN1, UGP, mino, fbp)", titleSize=13, legendPos="right")
+priorMatrix[immMetGenes, immMetGenes]
+round(bayesLLR2Mat[immMetGenes, immMetGenes], 2)
+
+# --- R^2 scatterplots ---
+
+Draw.R2.Scatterplot(bayesLLR2Mat.other, bayesLLR2Mat-bayesLLR2Mat.own, priorMatrix, geneSubset, T, F)
+Draw.R2.Scatterplot(nonBayesLLR2Mat.other, nonBayesLLR2Mat-nonBayesLLR2Mat.own, priorMatrix, geneSubset, F, F)
+  
+
 

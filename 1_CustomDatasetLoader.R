@@ -27,5 +27,6 @@ geneSubset <- geneNames
 # Read prior matrix
 priorMatrix <- read.csv("../Processed Data/Post-Mating Response/PriorMatrix.csv", row.names=1)
 
-
-
+# Read transcription factor data
+load("../Processed Data/Post-Mating Response/TFmatrix.RData")
+load("../Processed Data/Post-Mating Response/TF_not_DE_matrix.RData")

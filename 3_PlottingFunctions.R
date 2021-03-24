@@ -113,7 +113,7 @@ Vectorize.Labeled.Square.Matrix <- function(labeledMatrix) {
   matVector
 }
 
-Draw.R2.Scatterplot <- function(matrix1, matrix2, priorMatrix, geneSubset, interactive=T) {
+Draw.R2.Scatterplot <- function(matrix1, matrix2, priorMatrix, geneSubset, bayes, interactive=T) {
   xAxis <- Vectorize.Labeled.Square.Matrix(matrix1[geneSubset, geneSubset])
   yAxis <- Vectorize.Labeled.Square.Matrix(matrix2[geneSubset, geneSubset])
   if(missing(priorMatrix))
@@ -122,21 +122,24 @@ Draw.R2.Scatterplot <- function(matrix1, matrix2, priorMatrix, geneSubset, inter
     prior <- Vectorize.Labeled.Square.Matrix(priorMatrix[geneSubset, geneSubset])
     prior[is.na(prior)] <- 0
   }
+  if(bayes == TRUE)
+    plotTitle <- ifelse(interactive == T, "Bayesian lead-lag R^2 values", TeX("Bayesian lead-lag $R^2$ values"))
+  else
+    plotTitle <- ifelse(interactive == T, "Non-Bayesian lead-lag R^2 values", TeX("Non-Bayesian lead-lag $R^2$ values"))
+  plotData <- as.data.frame(cbind(round(xAxis, 3), round(yAxis, 3), prior))
+  colnames(plotData) <- c("x.axis", "y.axis", "prior")
+  plotData$prior <- as.factor(plotData$prior)
+  plotData <- plotData[order(plotData$prior),]
+  hoverText <- row.names(plotData)
+  p <- ggplot(plotData, aes(x=x.axis, y=y.axis, color=prior, text=hoverText)) + 
+    geom_point(size=0.8) + theme_light() + theme(legend.position="none") +
+    scale_color_manual(values=c(alpha("navy", 0.7), alpha("orangered3",0.8))) + ggtitle(plotTitle)
   if(interactive) {
-    plotData <- as.data.frame(cbind(round(xAxis, 3), round(yAxis, 3), prior))
-    colnames(plotData) <- c("x.axis", "y.axis", "prior")
-    plotData$prior <- as.factor(plotData$prior)
-    hoverText <- row.names(plotData)
-    p <- ggplot(plotData, aes(x=x.axis, y=y.axis, color=prior, text=hoverText)) + 
-      geom_point(size=0.8) + xlab('LLR2_other') + ylab('LLR2 - LLR2_own') + 
-      ggtitle("Lead-lag R^2 Values") + theme_light() + theme(legend.position="none") +
-      scale_color_manual(values=c("navy", "orangered3"))
-    ggplotly(p)
+    p <- p + xlab("LLR2_other") + ylab("LLR2 - LLR2_own")
+    return(ggplotly(p))
   } else {
-    plot(xAxis[prior == 0], yAxis[prior == 0], pch=20, col="navy", xlab=TeX("$LLR2_{other}$"), ylab=TeX("LLR2 - LLR2_{own}$"))
-    points(xAxis[prior == 1], yAxis[prior == 1], pch=20, col="orangered3", xlab=TeX("$LLR2_{other}$"), ylab=TeX("LLR2 - LLR2_{own}$"))
-    # plot(xAxis, yAxis, pch=20, col=ifelse(prior == 1, "orangered3", "navy"),
-    #      xlab=TeX("$LLR2_{other}$"), ylab=TeX("LLR2 - LLR2_{own}$"))
+    p <- p + xlab(TeX("LL$R^2_{other}$")) + ylab(TeX("LL$R^2$ - LL$R^2_{own}$"))
+    return(p)
   }
 }
 
