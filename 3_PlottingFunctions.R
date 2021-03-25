@@ -8,6 +8,7 @@ library(gplots)
 library(reshape2)
 library(gridExtra)
 library(directlabels)
+library(ggtext)
 
 Expression.Profile.Interpolant <- function(geneName) {
   profile <- geneData[geneName,]
@@ -50,7 +51,7 @@ Plot.Gene.Group <- function(genesToPlot, monochrome=F, points=T,
     plotColors <- alpha(plotColors, lineOpacity)
   if(missing(plotTitle))
     plotTitle = ""
-  else if(plotTitle == TRUE)
+  else if(class(plotTitle) != "expression" && plotTitle == TRUE)
     plotTitle <- strwrap(paste(genesToPlot, collapse=", "))
   
   if(missing(genesForExtrema)) 
@@ -82,8 +83,10 @@ Plot.Gene.Group <- function(genesToPlot, monochrome=F, points=T,
   }
   if(points == TRUE)
     p <- p + geom_point(data=melt(exprData, id.var="time"), mapping=aes(x=time, y=value, col=variable), size=pointSize) 
-  p <- p + ggtitle(plotTitle) + theme_bw() + xlab("Hours after infection") + ylab(TeX("Expression ($\\log_2$-fold change)")) +
-    theme(plot.title=element_text(size=titleSize)) + theme(plot.title = element_text(hjust=0.5))
+  
+  p <- p + theme_bw() + labs(title=plotTitle, x="Hours after infection", y=TeX("Expression ($\\log_2$-fold change)")) +
+    theme(plot.title=element_text(size=titleSize)) + theme(plot.title=element_text(hjust=0.5))
+  
   if(plotGrid == FALSE)
     p <- p + theme(panel.grid.major=element_blank(), panel.grid.minor=element_blank())
   if(lineLabels == TRUE) {
@@ -113,14 +116,14 @@ Vectorize.Labeled.Square.Matrix <- function(labeledMatrix) {
   matVector
 }
 
-Draw.R2.Scatterplot <- function(matrix1, matrix2, priorMatrix, geneSubset, bayes, interactive=T) {
+Draw.R2.Scatterplot <- function(matrix1, matrix2, priorMatrix, geneSubset, bayes, interactive=T, plotLegend=T) {
   xAxis <- Vectorize.Labeled.Square.Matrix(matrix1[geneSubset, geneSubset])
   yAxis <- Vectorize.Labeled.Square.Matrix(matrix2[geneSubset, geneSubset])
   if(missing(priorMatrix))
     prior <- matrix(0L, nrow=nrow(xAxis), ncol=1)
   else {
-    prior <- Vectorize.Labeled.Square.Matrix(priorMatrix[geneSubset, geneSubset])
-    prior[is.na(prior)] <- 0
+    prior <- Vectorize.Labeled.Square.Matrix(2*priorMatrix[geneSubset, geneSubset])
+    prior[is.na(prior)] <- 1
   }
   if(bayes == TRUE)
     plotTitle <- ifelse(interactive == T, "Bayesian lead-lag R^2 values", TeX("Bayesian lead-lag $R^2$ values"))
@@ -132,8 +135,16 @@ Draw.R2.Scatterplot <- function(matrix1, matrix2, priorMatrix, geneSubset, bayes
   plotData <- plotData[order(plotData$prior),]
   hoverText <- row.names(plotData)
   p <- ggplot(plotData, aes(x=x.axis, y=y.axis, color=prior, text=hoverText)) + 
-    geom_point(size=0.8) + theme_light() + theme(legend.position="none") +
-    scale_color_manual(values=c(alpha("navy", 0.7), alpha("orangered3",0.8))) + ggtitle(plotTitle)
+    geom_point(size=0.9) + theme_light() + ggtitle(plotTitle) + 
+    scale_color_manual(name="Prior", labels=c("0", "NA", "1"), values=c(alpha("gray67", 0.9), alpha("navy", 0.65), alpha("orangered3",0.8))) + 
+    theme(plot.title = element_text(hjust=0.5))
+  
+  if(plotLegend == TRUE) {
+    p <- p + theme(legend.position="bottom") + guides(color=guide_legend(override.aes=list(size=3))) +
+      theme(legend.background=element_rect(size=0.1, linetype="solid", color="black"))
+  } else
+    p <- p + theme(legend.position = "none")
+  
   if(interactive) {
     p <- p + xlab("LLR2_other") + ylab("LLR2 - LLR2_own")
     return(ggplotly(p))
@@ -142,4 +153,5 @@ Draw.R2.Scatterplot <- function(matrix1, matrix2, priorMatrix, geneSubset, bayes
     return(p)
   }
 }
+
 
