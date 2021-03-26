@@ -10,10 +10,13 @@ library(gridExtra)
 library(directlabels)
 library(ggtext)
 
-Expression.Profile.Interpolant <- function(geneName) {
+Expression.Profile.Interpolant <- function(geneName, method="spline") {
   profile <- geneData[geneName,]
   numPoints <- length(profile)
-  interpolant <- splinefun(x=hours, y=profile, method="natural")
+  if(method == "spline")
+    interpolant <- splinefun(x=hours, y=profile, method="natural")
+  else if(method == "linear")
+    interpolant <- approxfun(x=hours, y=profile, method="linear")
   return(interpolant)
 }
 
@@ -29,7 +32,7 @@ Time.Profile.Extrema <- function(genesToPlot) {
 Plot.Gene.Group <- function(genesToPlot, monochrome=F, points=T, 
                             add=F, plotLegend=F, plotGrid=F, 
                             lineLabels=F, pointSize=1.5, lineOpacity=1,
-                            useSplines=T, plotColors, legendSize, legendPos, 
+                            useSplines=T, fitSplines=F, plotColors, legendSize, legendPos, 
                             plotTitle, titleSize, genesForExtrema) {
   if(monochrome == TRUE) {
     if(missing(plotColors))
@@ -74,7 +77,7 @@ Plot.Gene.Group <- function(genesToPlot, monochrome=F, points=T,
     interpTimes <- seq(from=hours[1], to=hours[length(hours)], length.out=500)
     interpData <- data.frame(interpTimes, matrix(0, nrow=length(interpTimes), ncol=length(genesToPlot)))  
     for(i in 1:length(genesToPlot))
-      interpData[,i+1] <- Expression.Profile.Interpolant(genesToPlot[i])(interpTimes)
+      interpData[,i+1] <- Expression.Profile.Interpolant(genesToPlot[i], method=ifelse(fitSplines == T, "spline", "linear"))(interpTimes)
     colnames(interpData) <- c("time", genesToPlot)
     
     p <- ggplot(melt(interpData, id.var="time"), aes(x=time, y=value, col=variable)) + geom_line() + scale_color_manual(values=plotColors)
