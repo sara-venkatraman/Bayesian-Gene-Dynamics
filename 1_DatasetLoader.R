@@ -21,6 +21,10 @@ geneIDs <- as.character(geneIDs[,1])
 # Dataframe of expression measurements (as log_2 fold change) 
 geneData <- read.csv(paste("../Processed Data/", subdirectory, "/LogChange.csv", sep=""), row.names=1)
 
+# Rename IM3 to BomS3?
+geneNames[which(geneNames == "IM3")] <- "BomS3"
+rownames(geneData)[which(rownames(geneData) == "IM3")] <- "BomS3"
+
 # Define the hours corresponding to each time point in the dataset
 hours <- c(0, 1, 2, 4, 5, 6, 8, 10, 12, 14, 16, 20, 24, 30, 36, 42, 48)
 

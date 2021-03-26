@@ -273,7 +273,7 @@ plotColors <- c("dodgerblue2","orangered2")
 plotLegend <- T;  legendPos <- "bottom";  plotGrid <- T;  titleSize <- 12;  plotColors <- plotColors
 p1 <- Plot.Gene.Group(c("Act87E", "bmm"), plotTitle=expression(paste("Gene A: ", italic("Act87E"), ",  Gene B: ", italic("bmm"))), plotLegend=plotLegend, plotGrid=plotGrid, titleSize=titleSize, plotColors=plotColors)
 p2 <- Plot.Gene.Group(c("Act79B", "Mal-A7"), plotTitle=expression(paste("Gene A: ", italic("Act79B"), ",  Gene B: ", italic("Mal-A7"))), plotLegend=plotLegend, plotGrid=plotGrid, titleSize=titleSize, plotColors=plotColors)
-p3 <- Plot.Gene.Group(c("IM3","tok"), plotTitle=expression(paste("Gene A: ", italic("IM3"), ",  Gene B: ", italic("tok"))), plotLegend=plotLegend, plotGrid=plotGrid, titleSize=titleSize, plotColors=plotColors)
+p3 <- Plot.Gene.Group(c("BomS3","tok"), plotTitle=expression(paste("Gene A: ", italic("BomS3"), ",  Gene B: ", italic("tok"))), plotLegend=plotLegend, plotGrid=plotGrid, titleSize=titleSize, plotColors=plotColors)
 grid.arrange(p1, p2, p3, ncol=3)
 
 # Print non-Bayes LLR2 values
@@ -327,12 +327,12 @@ quantile(histData$LLR2_diff, 0.95)
 
 # --- Known and uncharacterized genes (Figure 2) ---
 
-grid.arrange(Plot.Gene.Group(c("per", "tim", "to", "vri", "CG11854", "CG18609", "Pdp1", "CG33511"), gg=T, plotGrid=T,plotLegend=T, plotTitle="Known and uncharacterized genes\n with circadian rhythm patterns"),
-             Plot.Gene.Group(c("AttC", "DptA", "DptB", "Dro", "edin", "Mtk", "CG43920", "CR44404", "CR45045"), gg=T, plotGrid=T,plotLegend=T, plotTitle="Known and uncharacterized genes\n with immune response functions"), ncol=2)
+grid.arrange(Plot.Gene.Group(c("per", "tim", "to", "vri", "CG11854", "CG18609", "Pdp1", "CG33511"), plotGrid=T, plotLegend=T, titleSize=12, plotTitle="Known and uncharacterized genes\n with circadian rhythm patterns"),
+             Plot.Gene.Group(c("AttC", "DptA", "DptB", "Dro", "edin", "Mtk", "CG43920", "CR44404", "CR45045"), plotGrid=T, plotLegend=T, titleSize=12, plotTitle="Known and uncharacterized genes\n with immune response functions"), ncol=2)
 
 # Also involved in immune response: "IM1", "IM14", "IM2", "IM23", "IM3", "IM33", "IM4", "IMPPP"
 
-# --- Time profiles in each cluster, with ggplot ---
+# --- Time profiles in each cluster ---
 
 clusterColors <- c("darkorange3", "dodgerblue3", "forestgreen", "darkmagenta", "indianred2", "orange4", "navy", "red2", "blueviolet", "turquoise4", "olivedrab", "darkslategray", "antiquewhite4", "coral4", "goldenrod2")
 monochrome <- T;  points <- F;  plotGrid <- T;  gg <- T;  titleSize <- 12
@@ -345,7 +345,7 @@ ggsave(file="Clusters.pdf", arrangeGrob(grobs=plotList, ncol=4), width=12, heigh
 # --- Temporal profile plot of Imd and Toll regulated genes in cluster 7 ---
 
 imdGenes <- c("AttA", "AttB", "AttC", "AttD", "Dro", "CecA2", "DptA", "DptB", "PGRP-SC2", "PGRP-SB1")
-tollGenes <- c("PGRP-SA", "IM33", "IMPPP", "IM23", "IM1", "IM2", "IM4", "IM14", "IM3")
+tollGenes <- c("PGRP-SA", "IM33", "IMPPP", "IM23", "IM1", "IM2", "IM4", "IM14", "BomS3")
 newGenes <- c("CR44404", "CG43236", "CG43202", "CG43920")
 negativeGenes <- c("Acp1", "CG7214")
 C7colors <- c(rep(alpha("orangered2", 0.65), 10), rep(alpha("dodgerblue3", 0.65), 9), rep(alpha("black", 0.65), 4), rep(alpha("forestgreen", 0.65), 2))
@@ -392,7 +392,7 @@ V(C7net)$color[! as_ids(V(C7net)) %in% newGenes] <- alpha("linen", 0.85)
 V(C7net)$frame.color[as_ids(V(C7net)) %in% newGenes] <- "peachpuff3"
 V(C7net)$frame.color[! as_ids(V(C7net)) %in% newGenes] <- "gray66"
 
-# Plot the new subnetwork for cluster 7 on a PDF
+# Plot the new subnetwork for cluster 7 on a PDF (note: network layout is random)
 numUnknownEdges <- sum(is.na(C7edges$Prior))
 numKnownEdges <- sum(!is.na(C7edges$Prior))
 pdf("Output/Cluster7Subnetwork.pdf", height=6, width=6)
@@ -472,9 +472,6 @@ round(bayesLLR2Mat[immMetGenes, immMetGenes], 2)
 # --- R^2 scatterplots ---
 
 # Non-interactive (for manuscript)
-DEsubset <- as.character(sample(DEgeneNames, size=DEsubsetProp*subsetSize))
-neighborSubset <- as.character(sample(neighborGeneNames, size=neighborSubsetProp*subsetSize))
-geneSubset <- unique(c(DEsubset, neighborSubset)) # There should be no duplicates anyway
 p1 <- Draw.R2.Scatterplot(nonBayesLLR2Mat.other, nonBayesLLR2Mat-nonBayesLLR2Mat.own, priorMatrix, geneSubset, F, F)
 p2 <- Draw.R2.Scatterplot(bayesLLR2Mat.other, bayesLLR2Mat-bayesLLR2Mat.own, priorMatrix, geneSubset, T, F)
 grid.arrange(p1, p2, ncol=2)
