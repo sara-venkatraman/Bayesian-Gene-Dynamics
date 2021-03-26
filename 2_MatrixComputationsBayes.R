@@ -1,7 +1,8 @@
 # --- Script 2: Non-Bayesian lead-lag R^2 computations ---
 
 # Requirements: Run the script "1_DatasetLoader.R" first.
-# Timing: 2.58 minutes for 951 genes, 21.8 minutes for 1735 genes, 1.05 hours for 2264 genes
+# Timing: 15.6 seconds for 223 genes, 2.58 minutes for 951 genes, 
+#         21.8 minutes for 1735 genes, 1.05 hours for 2264 genes
 
 library(parallel)
 # options(mc.cores = 3L)
