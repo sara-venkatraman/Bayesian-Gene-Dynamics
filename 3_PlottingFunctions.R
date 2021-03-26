@@ -126,14 +126,15 @@ Draw.R2.Scatterplot <- function(matrix1, matrix2, priorMatrix, geneSubset, bayes
     prior[is.na(prior)] <- 1
   }
   if(bayes == TRUE)
-    plotTitle <- ifelse(interactive == T, "Bayesian lead-lag R^2 values", TeX("Bayesian lead-lag $R^2$ values"))
+    plotTitle <- ifelse(interactive == T, "Bayesian lead-lag R^2 values", TeX("(b) Bayesian lead-lag $R^2$ values"))
   else
-    plotTitle <- ifelse(interactive == T, "Non-Bayesian lead-lag R^2 values", TeX("Non-Bayesian lead-lag $R^2$ values"))
+    plotTitle <- ifelse(interactive == T, "Non-Bayesian lead-lag R^2 values", TeX("(a) Non-Bayesian lead-lag $R^2$ values"))
   plotData <- as.data.frame(cbind(round(xAxis, 3), round(yAxis, 3), prior))
   colnames(plotData) <- c("x.axis", "y.axis", "prior")
   plotData$prior <- as.factor(plotData$prior)
   plotData <- plotData[order(plotData$prior),]
   hoverText <- row.names(plotData)
+  
   p <- ggplot(plotData, aes(x=x.axis, y=y.axis, color=prior, text=hoverText)) + 
     geom_point(size=0.9) + theme_light() + ggtitle(plotTitle) + 
     scale_color_manual(name="Prior", labels=c("0", "NA", "1"), values=c(alpha("gray67", 0.9), alpha("navy", 0.65), alpha("orangered3",0.8))) + 

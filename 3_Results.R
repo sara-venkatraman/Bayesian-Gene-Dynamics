@@ -5,16 +5,20 @@
 nonBayesLLR2Mat <- read.csv(paste("../Processed Data/R-Squared (", subdirectory, ")/NonBayesLLR2.csv", sep=""), row.names=1)
 nonBayesLLR2Mat.other <- read.csv(paste("../Processed Data/R-Squared (", subdirectory, ")/NonBayesLLR2_Other.csv", sep=""), row.names=1)
 nonBayesLLR2Mat.own <- read.csv(paste("../Processed Data/R-Squared (", subdirectory, ")/NonBayesLLR2_Own.csv", sep=""), row.names=1)
+nonBayesLLR2DiffMat <- nonBayesLLR2Mat - nonBayesLLR2Mat.own
 rownames(nonBayesLLR2Mat) <- geneNames;  colnames(nonBayesLLR2Mat) <- geneNames
 rownames(nonBayesLLR2Mat.other) <- geneNames;  colnames(nonBayesLLR2Mat.other) <- geneNames
 rownames(nonBayesLLR2Mat.own) <- geneNames;  colnames(nonBayesLLR2Mat.own) <- geneNames
+rownames(nonBayesLLR2DiffMat) <- geneNames;  colnames(nonBayesLLR2DiffMat) <- geneNames
 
 bayesLLR2Mat <- read.csv(paste("../Processed Data/R-Squared (", subdirectory, ")/BayesLLR2.csv", sep=""), row.names=1)
 bayesLLR2Mat.other <- read.csv(paste("../Processed Data/R-Squared (", subdirectory, ")/BayesLLR2_Other.csv", sep=""), row.names=1)
 bayesLLR2Mat.own <- read.csv(paste("../Processed Data/R-Squared (", subdirectory, ")/BayesLLR2_Own.csv", sep=""), row.names=1)
+bayesLLR2DiffMat <- bayesLLR2Mat - bayesLLR2Mat.own
 rownames(bayesLLR2Mat) <- geneNames;  colnames(bayesLLR2Mat) <- geneNames
 rownames(bayesLLR2Mat.other) <- geneNames;  colnames(bayesLLR2Mat.other) <- geneNames
 rownames(bayesLLR2Mat.own) <- geneNames;  colnames(bayesLLR2Mat.own) <- geneNames
+rownames(bayesLLR2DiffMat) <- geneNames;  colnames(bayesLLR2DiffMat) <- geneNames
 
 # --- Network diagrams ---
 
@@ -265,18 +269,12 @@ dev.off()
 
 # --- Inflated LLR^2 (Figure 1) ---
 
-# Using ggplot
 plotColors <- c("dodgerblue2","orangered2")
-grid.arrange(Plot.Gene.Group(c("Act87E", "bmm"), plotTitle="Gene A: Act87E;  Gene B: bmm", plotLegend=T, legendPos="bottom", gg=T, plotGrid=T, titleSize=12, plotColors=plotColors),
-             Plot.Gene.Group(c("Act79B", "Mal-A7"), plotTitle="Gene A: Act79B;  Gene B: Mal-A7", plotLegend=T, legendPos="bottom", gg=T, plotGrid=T, titleSize=12, plotColors=plotColors),
-             Plot.Gene.Group(c("IM3","tok"), plotTitle="Gene A: IM3;  Gene B: tok", plotLegend=T, legendPos="bottom", gg=T, plotGrid=T, titleSize=12, plotColors=plotColors), ncol=3)
-
-# Not using ggplot
-par(mfrow=c(1,3))
-Plot.Gene.Group(c("Act87E", "bmm"), plotTitle="Gene A: Act87E;  Gene B: bmm", titleSize=1.4, plotLegend=T, legendPos="topleft", gg=F, grid=T, plotColors=plotColors)
-Plot.Gene.Group(c("Mal-A7","Act79B"), plotTitle="Gene A: Mal-A7;  Gene B: Act79B", titleSize=1.4, plotLegend=T, legendPos="topleft", gg=F, grid=T, plotColors=plotColors)
-Plot.Gene.Group(c("IM3","tok"), plotTitle="Gene A: IM3;  Gene B: tok", titleSize=1.4, plotLegend=T, legendPos="topright", gg=F, grid=T, plotColors=plotColors)
-par(mfrow=c(1,1))
+plotLegend <- T;  legendPos <- "bottom";  plotGrid <- T;  titleSize <- 12;  plotColors <- plotColors
+p1 <- Plot.Gene.Group(c("Act87E", "bmm"), plotTitle=expression(paste("Gene A: ", italic("Act87E"), ",  Gene B: ", italic("bmm"))), plotLegend=plotLegend, plotGrid=plotGrid, titleSize=titleSize, plotColors=plotColors)
+p2 <- Plot.Gene.Group(c("Act79B", "Mal-A7"), plotTitle=expression(paste("Gene A: ", italic("Act79B"), ",  Gene B: ", italic("Mal-A7"))), plotLegend=plotLegend, plotGrid=plotGrid, titleSize=titleSize, plotColors=plotColors)
+p3 <- Plot.Gene.Group(c("IM3","tok"), plotTitle=expression(paste("Gene A: ", italic("IM3"), ",  Gene B: ", italic("tok"))), plotLegend=plotLegend, plotGrid=plotGrid, titleSize=titleSize, plotColors=plotColors)
+grid.arrange(p1, p2, p3, ncol=3)
 
 # Print non-Bayes LLR2 values
 nonBayesLLR2Mat["bmm","Act87E"]
@@ -352,7 +350,7 @@ newGenes <- c("CR44404", "CG43236", "CG43202", "CG43920")
 negativeGenes <- c("Acp1", "CG7214")
 C7colors <- c(rep(alpha("orangered2", 0.65), 10), rep(alpha("dodgerblue3", 0.65), 9), rep(alpha("black", 0.65), 4), rep(alpha("forestgreen", 0.65), 2))
 Plot.Gene.Group(c(imdGenes, tollGenes, newGenes, negativeGenes), plotColors=C7colors, 
-                plotGrid=T, gg=T, points=T, lineLabels=F, plotTitle="Selected genes from cluster 7")
+                plotGrid=T, plotTitle="Selected genes from cluster 7", titleSize=12)
 
 # --- Network of unknown genes in cluster 7 ---
 
@@ -408,9 +406,8 @@ dev.off()
 
 C12genes <- c("fbp", "to", "AGBE", "Galk", "Gba1b", "CG11594", "CG10469", "CG13315")
 C12colors <- c("black", "dodgerblue2", rep("orangered2", 3), rep("springgreen4", 3))
-Plot.Gene.Group(C12genes, plotColors=C12colors, plotGrid=T, lineLabels=T,
-                plotTitle="Selected genes from cluster 12", pointSize=1,
-                plotLegend=T)
+Plot.Gene.Group(C12genes, plotColors=C12colors, plotGrid=T, titleSize=12,
+                plotTitle="Selected genes from cluster 12")
 
 # --- Network of neighbors of gene "fbp" in cluster 12 ---
 
@@ -474,8 +471,62 @@ round(bayesLLR2Mat[immMetGenes, immMetGenes], 2)
 
 # --- R^2 scatterplots ---
 
-Draw.R2.Scatterplot(bayesLLR2Mat.other, bayesLLR2Mat-bayesLLR2Mat.own, priorMatrix, geneSubset, T, F)
-Draw.R2.Scatterplot(nonBayesLLR2Mat.other, nonBayesLLR2Mat-nonBayesLLR2Mat.own, priorMatrix, geneSubset, F, F)
-  
+# Non-interactive (for manuscript)
+DEsubset <- as.character(sample(DEgeneNames, size=DEsubsetProp*subsetSize))
+neighborSubset <- as.character(sample(neighborGeneNames, size=neighborSubsetProp*subsetSize))
+geneSubset <- unique(c(DEsubset, neighborSubset)) # There should be no duplicates anyway
+p1 <- Draw.R2.Scatterplot(nonBayesLLR2Mat.other, nonBayesLLR2Mat-nonBayesLLR2Mat.own, priorMatrix, geneSubset, F, F)
+p2 <- Draw.R2.Scatterplot(bayesLLR2Mat.other, bayesLLR2Mat-bayesLLR2Mat.own, priorMatrix, geneSubset, T, F)
+grid.arrange(p1, p2, ncol=2)
 
+# Interactive
+Draw.R2.Scatterplot(bayesLLR2Mat.other, bayesLLR2Mat-bayesLLR2Mat.own, priorMatrix, geneSubset, T, T, F)
+
+# --- Gene pair examples from R^2 scatterplots ---
+
+# Plot settings
+plotLegend <- T;  legendPos <- "bottom";  plotGrid <- T;  titleSize <- 12
+plotColors <- c("dodgerblue2", "orangered2", "goldenrod", "forestGreen", "magenta", "navy", "chocolate1")
+
+# Middle region of scatterplot
+p1 <- Plot.Gene.Group(c("IMPPP", "CG43085", "CG30098"), plotTitle=expression(paste("Genes:  ", italic("IMPPP, CG43085, CG30098"))), plotLegend=plotLegend, legendPos=legendPos, plotGrid=plotGrid, titleSize=titleSize, plotColors=plotColors)
+p2 <- Plot.Gene.Group(c("CR42868", "AttD", "CG9616"), plotTitle=expression(paste("Genes:  ", italic("CR42868, AttD, CG9616"))), plotLegend=plotLegend, legendPos=legendPos, plotGrid=plotGrid, titleSize=titleSize, plotColors=plotColors)
+p3 <- Plot.Gene.Group(c("Spn28Dc", "CR43364", "CR42715", "scb"), plotTitle=expression(paste("Genes:  ", italic("Spn28Dc, CR43364, CR42715, scb"))), plotLegend=plotLegend, legendPos=legendPos, plotGrid=plotGrid, titleSize=titleSize, plotColors=plotColors)
+p4 <- Plot.Gene.Group(c("ACC", "Idh", "GstE9"), plotTitle=expression(paste("Genes:  ", italic("ACC, Idh, GstE9"))), plotLegend=plotLegend, legendPos=legendPos, plotGrid=plotGrid, titleSize=titleSize, plotColors=plotColors)
+grid.arrange(p2, p3, p4, ncol=3)
+
+# Upper-right region of scatterplot
+p1 <- Plot.Gene.Group(c("alphaTry", "gammaTry", "CG30025"), plotTitle=expression(paste("Genes:  ", italic("alphaTry, gammaTry, CG30025"))), plotLegend=plotLegend, legendPos=legendPos, plotGrid=plotGrid, titleSize=titleSize, plotColors=plotColors)
+p2 <- Plot.Gene.Group(c("RpS26", "RpS6", "RpL13", "RpL7"), plotTitle=expression(paste("Genes:  ", italic("RpS26, RpS6, RpL13, RpL7"))), plotLegend=plotLegend, legendPos=legendPos, plotGrid=plotGrid, titleSize=titleSize, plotColors=plotColors)
+p3 <- Plot.Gene.Group(c("Nsun2", "CG9143", "nop5", "CG13096"), plotTitle=expression(paste("Genes:  ", italic("Nsun2, CG9143, nop5, CG13096"))), plotLegend=plotLegend, legendPos=legendPos, plotGrid=plotGrid, titleSize=titleSize, plotColors=plotColors)
+p4 <- Plot.Gene.Group(c("CG13096", "l(1)G0020", "Nop56"), plotTitle=expression(paste("Genes:  ", italic("CG13096, l(1)G0020, Nop56"))), plotLegend=plotLegend, legendPos=legendPos, plotGrid=plotGrid, titleSize=titleSize, plotColors=plotColors)
+grid.arrange(p1, p2, p4, ncol=3)
+
+# --- Selected genes in cluster 2 ---
+
+circadian <- c("tim", "per", "Clk", "vri", "Pdp1")
+cuticle <- c("Cpr49Ab", "Cpr49Ae", "Cpr62Ba", "Cpr72Ec")
+dopSynth <- c("e", "ple")
+C2colors <- c(rep("black", 3), "orange", "red", rep("pink2", 4), rep("purple", 2))
+Plot.Gene.Group(c(circadian, cuticle, dopSynth), plotColors=C2colors, plotGrid=T,
+                plotTitle="Selected genes from cluster 2", titleSize=12)
+
+# --- Selected genes in cluster 9 ---
+
+maltaseUp <- c("Mal-A1", "Mal-A6", "Mal-A7", "Mal-A8")
+hemoDown <- c("NimC1", "NimB4", "eater", "Hml")
+other <- c("Galphaf", "tobi")
+C9colors <- c(rep(alpha("orangered3", 0.7), 4), rep(alpha("black", 0.8), 4), "deeppink2", "dodgerblue2")
+Plot.Gene.Group(c(maltaseUp, hemoDown, other), plotColors=C9colors, plotGrid=T,
+                plotTitle="Selected genes from cluster 9", titleSize=12)
+
+# --- Selected genes in cluster 5 ---
+
+ribosome <- c("nop5", "Fib", "Nop60B", "CG12301", "CG32409", "U3-55K")
+lipidCat <- c("dop", "Lip1", "Lsd-1") # what are  "dop" and "Lip1"
+fattyAcid <- c("FASN1", "ACC", "AcCoAS", "ATPCL", "mino", "CG10924", "Gapdh1") # Gapdh1, or Gpdh? Pepck is CG10924?
+fasn1New <- c("CG3756", "CG3940", "CG8036", "eRF1", "aralar1", "CG32409", "CG31904", "CG15120", "CG1640", "CG16926") # CG32904 is CG32409?
+C5colors <- c(rep(alpha("forestgreen", 0.7), 6), rep(alpha("blue3", 0.8), 7), rep(alpha("tan2", 0.9), 10))
+Plot.Gene.Group(c(ribosome, fattyAcid, fasn1New), plotColors=C5colors, plotGrid=T,
+                plotTitle="Selected genes from cluster 5", titleSize=12)
 
