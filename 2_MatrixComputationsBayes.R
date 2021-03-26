@@ -20,7 +20,11 @@ Integrator <- function(f, lower, upper) integrate(f, lower, upper)$value
 
 # Integrate the splines
 integrals <- mclapply(geneDataList, function(y) {
-  c(0, mapply(Integrator, list(splinefun(x=hours, y=y, method = "natural")), intLowerBound, intUpperBound))
+  # Integrate spline interpolants
+  c(0, mapply(Integrator, list(splinefun(x=hours, y=y, method="natural")), intLowerBound, intUpperBound))
+  
+  # Uncomment this to integrate linear interpolants instead
+  # c(0, mapply(Integrator, list(approxfun(x=hours, y=y, method="linear")), intLowerBound, intUpperBound))
 })
 
 # Matrix specifying the genes comprising each unique pair 
