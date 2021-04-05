@@ -342,15 +342,16 @@ for(i in 1:length(table(subGroups))) {
 }
 ggsave(file="Clusters.pdf", arrangeGrob(grobs=plotList, ncol=4), width=12, height=9, units="in")
 
-# --- Temporal profile plot of Imd and Toll regulated genes in cluster 7 ---
+# --- Selected genes in cluster 7 ---
 
-imdGenes <- c("AttA", "AttB", "AttC", "AttD", "Dro", "CecA2", "DptA", "DptB", "PGRP-SC2", "PGRP-SB1")
-tollGenes <- c("PGRP-SA", "IM33", "IMPPP", "IM23", "IM1", "IM2", "IM4", "IM14", "BomS3")
+imdGenes <- c("AttA", "AttB", "AttC", "Dro", "CecA2", "DptA", "DptB", "PGRP-SB1")
+tollGenes <- c("PGRP-SA", "IMPPP", "IM1", "IM2", "IM4", "IM14", "IM23", "BomS3")
 newGenes <- c("CR44404", "CG43236", "CG43202", "CG43920")
 negativeGenes <- c("Acp1", "CG7214")
-C7colors <- c(rep(alpha("orangered2", 0.65), 10), rep(alpha("dodgerblue3", 0.65), 9), rep(alpha("black", 0.65), 4), rep(alpha("forestgreen", 0.65), 2))
+C7colors <- c(rep(alpha("orangered2", 0.65), 8), rep(alpha("dodgerblue3", 0.65), 8), rep(alpha("black", 0.65), 4), rep(alpha("forestgreen", 0.65), 2))
 Plot.Gene.Group(c(imdGenes, tollGenes, newGenes, negativeGenes), plotColors=C7colors, 
-                plotGrid=T, plotTitle="Selected genes from cluster 7", titleSize=12)
+                plotGrid=T, plotTitle="<b>Selected genes from cluster 7</b>", titleSize=12,
+                subtitle="(<span style='color:orangered2;'>Imd-regulated</span><span style='color:white;'> l</span><span style='color:orangered2;'>genes</span>; <span style='color:dodgerblue3;'>Toll-regulated genes</span>; <span style='color:forestgreen;'>cuticle proteins</span>;<br> <span style='color:black;'>genes potentially associated with Imd signaling</span>)")
 
 # --- Network of unknown genes in cluster 7 ---
 
@@ -407,7 +408,8 @@ dev.off()
 C12genes <- c("fbp", "to", "AGBE", "Galk", "Gba1b", "CG11594", "CG10469", "CG13315")
 C12colors <- c("black", "dodgerblue2", rep("orangered2", 3), rep("springgreen4", 3))
 Plot.Gene.Group(C12genes, plotColors=C12colors, plotGrid=T, titleSize=12,
-                plotTitle="Selected genes from cluster 12")
+                plotTitle="<b>Selected genes from cluster 12</b>",
+                subtitle="(<span style='color:black;'>gene <i>fbp</i></span>; <span style='color:orangered2;'>genes involved in carbohydrate metabolism</span>;<br> <span style='color:springgreen4;'>uncharacterized genes</span>; <span style='color:dodgerblue2;'>gene <i>takeout</i></span>)")
 
 # --- Network of neighbors of gene "fbp" in cluster 12 ---
 
@@ -465,7 +467,8 @@ dev.off()
 # --- Small-scale case study (immune response/metabolism) ---
 
 immMetGenes <- c("IM1", "IM2", "FASN1", "UGP", "mino", "fbp")
-Plot.Gene.Group(immMetGenes, plotGrid=T, plotLegend=T, plotTitle="Subset of genes involved in immune response\n (IM1, IM2) and metabolism (FASN1, UGP, mino, fbp)", titleSize=13, legendPos="right")
+p <- Plot.Gene.Group(immMetGenes, plotGrid=T, plotLegend=T, plotTitle="Subset of genes involved in immune response<br> (IM1, IM2) and metabolism (FASN1, UGP, mino, fbp)", titleSize=12, legendPos="bottom")
+p + guides(colour=guide_legend(nrow=1))
 priorMatrix[immMetGenes, immMetGenes]
 round(bayesLLR2Mat[immMetGenes, immMetGenes], 2)
 
@@ -506,24 +509,28 @@ cuticle <- c("Cpr49Ab", "Cpr49Ae", "Cpr62Ba", "Cpr72Ec")
 dopSynth <- c("e", "ple")
 C2colors <- c(rep("black", 3), "orange", "red", rep("pink2", 4), rep("purple", 2))
 Plot.Gene.Group(c(circadian, cuticle, dopSynth), plotColors=C2colors, plotGrid=T,
-                plotTitle="Selected genes from cluster 2", titleSize=12)
+                plotTitle="<b>Selected genes from cluster 2<b>", titleSize=12,
+                subtitle="(Regulators of circadian clock: <i>tim, per, Clk, <span style='color:darkorange;'>vri</span>, <span style='color:red;'>Pdp1</i></span>;<br> <span style='color:lightpink3;'>cuticle proteins</span>; <span style='color:purple;'>genes involved in dopamine synthesis</span>)")
 
 # --- Selected genes in cluster 9 ---
 
 maltaseUp <- c("Mal-A1", "Mal-A6", "Mal-A7", "Mal-A8")
 hemoDown <- c("NimC1", "NimB4", "eater", "Hml")
 other <- c("Galphaf", "tobi")
-C9colors <- c(rep(alpha("orangered3", 0.7), 4), rep(alpha("black", 0.8), 4), "deeppink2", "dodgerblue2")
+C9colors <- c(rep(alpha("orangered3", 0.7), 4), rep(alpha("black", 0.8), 4), "green3", "dodgerblue2")
 Plot.Gene.Group(c(maltaseUp, hemoDown, other), plotColors=C9colors, plotGrid=T,
-                plotTitle="Selected genes from cluster 9", titleSize=12)
+                plotTitle="<b>Selected genes from cluster 9<b>", titleSize=12, plotTimes=hours[1:11],
+                subtitle="(<span style='color:orangered3;'>up-regulated</span><span style='color:white;'> l</span><span style='color:orangered3;'>maltases</span>; down-regulated<span style='color:white;'> l</span>genes expressed in hemocytes;<br> <span style='color:dodgerblue2;'>gene <i>Galphaf</i></span>; <span style='color:green3;'>gene <i>tobi</i></span>)")
 
 # --- Selected genes in cluster 5 ---
+# Dimensions of plot: 5.8 x 4.48 inches
 
 ribosome <- c("nop5", "Fib", "Nop60B", "CG12301", "CG32409", "U3-55K")
-lipidCat <- c("dop", "Lip1", "Lsd-1") # what are  "dop" and "Lip1"
-fattyAcid <- c("FASN1", "ACC", "AcCoAS", "ATPCL", "mino", "CG10924", "Gapdh1") # Gapdh1, or Gpdh? Pepck is CG10924?
+fattyAcid <- c("FASN1", "ACC", "AcCoAS", "ATPCL", "mino")
 fasn1New <- c("CG3756", "CG3940", "CG8036", "eRF1", "aralar1", "CG32409", "CG31904", "CG15120", "CG1640", "CG16926") # CG32904 is CG32409?
-C5colors <- c(rep(alpha("forestgreen", 0.7), 6), rep(alpha("blue3", 0.8), 7), rep(alpha("tan2", 0.9), 10))
-Plot.Gene.Group(c(ribosome, fattyAcid, fasn1New), plotColors=C5colors, plotGrid=T,
-                plotTitle="Selected genes from cluster 5", titleSize=12)
+lipidCat <- c("dob", "Lip2", "Lsd-1")
+C5colors <- c(rep(alpha("orangered3", 0.7), 6), rep(alpha("blue2", 0.7), 5), rep(alpha("chartreuse3", 0.75), 10), rep(alpha("black", 0.7), 3))
+Plot.Gene.Group(c(ribosome, fattyAcid, fasn1New, lipidCat), plotColors=C5colors, plotGrid=T,
+                plotTitle="<b>Selected genes from cluster 5</b>", titleSize=12, plotTimes=hours[1:12],
+                subtitle="(<span style='color:orangered3;'>ribosome biogenesis</span>; <span style='color:black;'>lipid catabolism</span>; <span style='color:blue2;'>fatty acid biosynthesis</span>;<br><span style='color:chartreuse3;'>genes with uncharacterized relationships to <i>FASN1</i></span>)")
 

@@ -32,8 +32,8 @@ Time.Profile.Extrema <- function(genesToPlot) {
 Plot.Gene.Group <- function(genesToPlot, monochrome=F, points=T, 
                             add=F, plotLegend=F, plotGrid=F, 
                             lineLabels=F, pointSize=1.5, lineOpacity=1,
-                            useSplines=T, fitSplines=F, plotColors, legendSize, legendPos, 
-                            plotTitle, titleSize, genesForExtrema) {
+                            useSplines=T, fitSplines=T, plotColors, legendSize, legendPos, 
+                            plotTitle, titleSize, genesForExtrema, plotTimes, subtitle) {
   if(monochrome == TRUE) {
     if(missing(plotColors))
       plotColors <- rep(alpha("blue", 0.18), length(genesToPlot))
@@ -64,17 +64,21 @@ Plot.Gene.Group <- function(genesToPlot, monochrome=F, points=T,
 
   if(missing(titleSize))
     titleSize <- 15
+  
   if(missing(legendSize))
     legendSize <- 10
-  if(missing(legendPos)) {
-    legendPos <- "bottom"
-  }
   
-  exprData <- data.frame(hours, t(geneData[genesToPlot,]))
+  if(missing(legendPos))
+    legendPos <- "bottom"
+  
+  if(missing(plotTimes))
+    plotTimes <- hours
+  
+  exprData <- data.frame(plotTimes, t(geneData[genesToPlot, 1:length(plotTimes)]))
   colnames(exprData) <- c("time", genesToPlot)
   
   if(useSplines == T) {
-    interpTimes <- seq(from=hours[1], to=hours[length(hours)], length.out=500)
+    interpTimes <- seq(from=plotTimes[1], to=plotTimes[length(plotTimes)], length.out=500)
     interpData <- data.frame(interpTimes, matrix(0, nrow=length(interpTimes), ncol=length(genesToPlot)))  
     for(i in 1:length(genesToPlot))
       interpData[,i+1] <- Expression.Profile.Interpolant(genesToPlot[i], method=ifelse(fitSplines == T, "spline", "linear"))(interpTimes)
@@ -88,7 +92,10 @@ Plot.Gene.Group <- function(genesToPlot, monochrome=F, points=T,
     p <- p + geom_point(data=melt(exprData, id.var="time"), mapping=aes(x=time, y=value, col=variable), size=pointSize) 
   
   p <- p + theme_bw() + labs(title=plotTitle, x="Hours after infection", y=TeX("Expression ($\\log_2$-fold change)")) +
-    theme(plot.title=element_text(size=titleSize)) + theme(plot.title=element_text(hjust=0.5))
+    theme(plot.title=element_text(size=titleSize)) + theme(plot.title=element_text(hjust=0.5)) + theme(plot.title=element_markdown(lineheight=1.1))
+  
+  if(!missing(subtitle))
+    p <- p + labs(subtitle=subtitle) + theme(plot.subtitle=element_text(hjust=0.5)) + theme(plot.subtitle=element_markdown(lineheight=1.1))
   
   if(plotGrid == FALSE)
     p <- p + theme(panel.grid.major=element_blank(), panel.grid.minor=element_blank())
@@ -119,7 +126,7 @@ Vectorize.Labeled.Square.Matrix <- function(labeledMatrix) {
   matVector
 }
 
-Draw.R2.Scatterplot <- function(matrix1, matrix2, priorMatrix, geneSubset, bayes, interactive=T, plotLegend=T) {
+Draw.R2.Scatterplot <- function(matrix1, matrix2, priorMatrix, geneSubset, bayes, interactive=T, plotLegend=T, legendPos="bottom") {
   xAxis <- Vectorize.Labeled.Square.Matrix(matrix1[geneSubset, geneSubset])
   yAxis <- Vectorize.Labeled.Square.Matrix(matrix2[geneSubset, geneSubset])
   if(missing(priorMatrix))
@@ -144,7 +151,7 @@ Draw.R2.Scatterplot <- function(matrix1, matrix2, priorMatrix, geneSubset, bayes
     theme(plot.title = element_text(hjust=0.5))
   
   if(plotLegend == TRUE) {
-    p <- p + theme(legend.position="bottom") + guides(color=guide_legend(override.aes=list(size=3))) +
+    p <- p + theme(legend.position=legendPos) + guides(color=guide_legend(override.aes=list(size=3))) +
       theme(legend.background=element_rect(size=0.1, linetype="solid", color="black"))
   } else
     p <- p + theme(legend.position = "none")
