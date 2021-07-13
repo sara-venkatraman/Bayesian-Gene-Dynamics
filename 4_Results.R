@@ -2,18 +2,21 @@
 
 # This script produces all figures in our paper.
 
-# Requirements: Run the scripts "1_DatasetLoader.R", "2_LLR2Calculations.R"
-# (to produce the three lead-lag R^2 similarity matrices) and 
-# "3_PlottingFunctions.R" first.
-
-# TODO: fix above comments on which scripts to load
-
+# Run the data loader script to read gene expression data and prior adjacency matrix
 source("1_DatasetLoader.R")
+
+# Run the LLR2 calculations script to produce the three lead-lag R^2
+# similarity matrices *only* if they have not already been generated.
+# source("2_LLR2Calculations.R")
+
+# Run the plotting functions script
 source("3_PlottingFunctions.R")
 
 # Load library for arranging multiple plots on a grid
 library(gridExtra)
 
+# Read in the non-Bayesian lead-lag R^2 matrices (these matrices are only
+# used to generate Figure 9)
 nonBayesLLR2Mat <- read.csv("../Processed Data/R-Squared (Combined Genes)/NonBayesLLR2.csv", row.names=1)
 nonBayesLLR2Mat.other <- read.csv("../Processed Data/R-Squared (Combined Genes)/NonBayesLLR2_Other.csv", row.names=1)
 nonBayesLLR2Mat.own <- read.csv("../Processed Data/R-Squared (Combined Genes)/NonBayesLLR2_Own.csv", row.names=1)
@@ -21,6 +24,7 @@ colnames(nonBayesLLR2Mat) <- rownames(nonBayesLLR2Mat)
 colnames(nonBayesLLR2Mat.other) <- rownames(nonBayesLLR2Mat.other)
 colnames(nonBayesLLR2Mat.own) <- rownames(nonBayesLLR2Mat.own)
 
+# Read in the Bayesian lead-lag R^2 matrices
 bayesLLR2Mat <- read.csv("../Processed Data/R-Squared (Combined Genes)/BayesLLR2.csv", row.names=1)
 bayesLLR2Mat.other <- read.csv("../Processed Data/R-Squared (Combined Genes)/BayesLLR2_Other.csv", row.names=1)
 bayesLLR2Mat.own <- read.csv("../Processed Data/R-Squared (Combined Genes)/BayesLLR2_Own.csv", row.names=1)
@@ -56,7 +60,7 @@ ggsave(file="ImmuneMetabolic.pdf", p, width=5.8, height=4.48, units="in")
 priorMatrix[immuneMetabolicGenes, immuneMetabolicGenes]
 
 # Print corresponding sections of Bayesian LLR2 and LLR2 - LLR2_own matrices
-# TODO: include asymmetry
+# TODO: include code for asymmetric calculations
 round(bayesLLR2Mat[immuneMetabolicGenes, immuneMetabolicGenes], 2)
 round(bayesLLR2Mat[immuneMetabolicGenes, immuneMetabolicGenes] - bayesLLR2Mat.own[immuneMetabolicGenes, immuneMetabolicGenes], 2)
 
@@ -74,9 +78,7 @@ plotList <- list()
 plotColors <- c("darkorange3", "dodgerblue3", "forestgreen", "darkmagenta", "indianred2", "orange4", "navy", "red2", "blueviolet", "turquoise4", "olivedrab", "darkslategray", "antiquewhite4", "coral4", "goldenrod2")
 for(i in 1:length(table(subGroups))) {
   numGenesInCluster <- length(geneNames[subGroups == i])
-  plotList[[i]] <- Plot.Gene.Group(geneNames[subGroups == i], plotColors=rep(plotColors[i], numGenesInCluster), points=FALSE, 
-                                   plotTitle=paste("Cluster ", i, " (", numGenesInCluster, " genes)", sep=""), titleSize=12,
-                                   plotLegend=FALSE, lineOpacity=0.2)
+  plotList[[i]] <- Plot.Gene.Group(geneNames[subGroups == i], plotColors=rep(plotColors[i], numGenesInCluster), points=FALSE, plotTitle=paste("Cluster ", i, " (", numGenesInCluster, " genes)", sep=""), titleSize=12, plotLegend=FALSE, lineOpacity=0.2)
 }
 ggsave(file="Clusters.pdf", arrangeGrob(grobs=plotList, ncol=4), width=12, height=9, units="in")
 
@@ -96,369 +98,80 @@ ggsave(file="Cluster7Genes.pdf", p, width=6, height=4.5, units="in")
 
 newGenes <- c("CG44404", "CG43236", "CG43202", "CG43920")
 
-# Get the entire network of genes
+# Get the entire network of genes (edge defined for LLR2 > 0.9)
 adjBayes <- (bayesLLR2Mat > 0.9) + 0
-networkBayes <- graph_from_adjacency_matrix(adjBayes , mode='undirected', diag=F)
+networkBayes <- graph_from_adjacency_matrix(adjBayes , mode='undirected', diag=FALSE)
 
-# Get all the neighbors of the unknown genes in cluster 7
+# Get all neighbors of the unknown genes in cluster 7 as a named list
 unknownC7neighbors <- adjacent_vertices(networkBayes, newGenes)
 
 # Collapse this list of neighbors into one vector of nodes
 allNodes <- c()
-for(j in 1:length(unknownC7neighbors))
-  allNodes <- c(allNodes, names(unknownC7neighbors[j]), names(unknownC7neighbors[[j]]))
-allNodes <- unique(allNodes)
+allNodes <- lapply(unknownC7neighbors, function(x) c(allNodes, names(x)))
+allNodes <- unique(unlist(allNodes, use.names=FALSE))
 
 # Form a new subnetwork out of allNodes
 C7adj <- (bayesLLR2Mat[allNodes, allNodes] > 0.9) + 0
-C7net <- graph_from_adjacency_matrix(C7adj , mode='undirected', diag=F)
+C7net <- graph_from_adjacency_matrix(C7adj , mode='undirected', diag=FALSE)
 
-# Get a new dataframe of edges corresponding to allNodes
+# Get the priors associated with each edge in this subnetwork
 C7edges <- data.frame(as_edgelist(C7net))
-colnames(C7edges) <- c("Gene1", "Gene2"); C7edges$Prior <- 0
-for(j in 1:nrow(C7edges)) {
-  prior <- priorMatrix[C7edges[j,"Gene1"], C7edges[j,"Gene2"]]
-  C7edges$Prior[j] <- prior
-}
+colnames(C7edges) <- c("Gene1", "Gene2")
+C7edges$Prior <- unlist(apply(C7edges, 1, function(x) priorMatrix[x[1], x[2]]))
 
-# Edges between genes with unknown associations will be blue, and edges 
-# for known associations will be red
+# Blue edges between genes with unknown associations,
+# red edges between genes with known associations
 E(C7net)$color[is.na(C7edges$Prior)] <- alpha('blue', 0.7)
 E(C7net)$color[!is.na(C7edges$Prior)] <- alpha('red', 0.7)
 
-# The four novel genes will be colored differently
+# The four genes of interest will be colored differently
 V(C7net)$color[as_ids(V(C7net)) %in% newGenes] <- alpha("navajowhite", 0.95)
 V(C7net)$color[! as_ids(V(C7net)) %in% newGenes] <- alpha("linen", 0.85)
 
-# Node frame colors
+# Set the node outline colors
 V(C7net)$frame.color[as_ids(V(C7net)) %in% newGenes] <- "peachpuff3"
 V(C7net)$frame.color[! as_ids(V(C7net)) %in% newGenes] <- "gray66"
 
-# Plot the new subnetwork for cluster 7 on a PDF (note: network layout is random)
+# Plot the subnetwork on a PDF (note: network layout is random)
 numUnknownEdges <- sum(is.na(C7edges$Prior))
 numKnownEdges <- sum(!is.na(C7edges$Prior))
-pdf("Output/Cluster7Subnetwork.pdf", height=6, width=6)
+pdf("Cluster7Subnetwork.pdf", height=6, width=6)
 plotTitle <- paste("New relationships detected in cluster 7\n(", length(allNodes), " genes; ", numKnownEdges, " previously-known edges, ", numUnknownEdges, " newly-identified edges)", sep="")
 plot(C7net, layout=layout_with_lgl, vertex.size=21, vertex.label.family="Helvetica",
      vertex.label.cex=0.5, edge.width=1.2)
 title(plotTitle, cex.main=0.8, font.main=1)
 dev.off()
 
-# --- Network diagrams ---
-
-# Non-Bayesian analysis
-adjNonBayes <- (nonBayesLLR2Mat > 0.95) + 0
-networkNonBayes <- graph_from_adjacency_matrix(adjNonBayes , mode='undirected', diag=F)
-plot(networkNonBayes, layout=layout.fruchterman.reingold, vertex.label=NA, vertex.size=2, vertex.color=cluster_label_prop(networkNonBayes)$membership)
-
-# Plot largest connected component from non-Bayesian analysis
-# Contains 1731/1735 genes (from full gene set)
-# Contains 871/951 genes (from DE gene set)
-networkNonBayesComponents <- clusters(networkNonBayes, mode="strong")
-subnetworkNonBayes <- induced_subgraph(networkNonBayes, V(networkNonBayes)[networkNonBayesComponents$membership == which.max(networkNonBayesComponents$csize)])
-plot(subnetworkNonBayes, layout=layout.fruchterman.reingold, vertex.label=NA, vertex.size=4, vertex.frame.color="darkslategray",edge.width=0.5)#vertex.color=cluster_label_prop(subnetworkNonBayes)$membership, vertex.frame.color="black")
-
-# Bayesian analysis
-adjBayes <- (bayesLLR2Mat > 0.90) + 0
-networkBayes <- graph_from_adjacency_matrix(adjBayes , mode='undirected', diag=F)
-plot(networkBayes, layout=layout_nicely, vertex.label=NA, vertex.size=3, vertex.color=cluster_label_prop(networkBayes)$membership)
-
-# Plot largest connected component from Bayesian analysis
-# Contains 426/1735 genes (from full gene set), using 0.95 R^2 cutoff for edges
-# Contains 290/951 genes (from DE gene set), using 0.95 R^2 cutoff for edges
-networkBayesComponents <- clusters(networkBayes, mode="strong")
-subnetworkBayes <- induced_subgraph(networkBayes, V(networkBayes)[networkBayesComponents$membership == which.max(networkBayesComponents$csize)])
-plot(subnetworkBayes, layout=layout_with_kk, vertex.label=NA, vertex.size=4.5, edge.width=0.7, vertex.color=cluster_label_prop(subnetworkBayes)$membership, vertex.frame.color="darkslategray", edge.color="dimgray")
-
-# --- Hierarchical clustering from Bayesian analysis ---
-
-# For each of the 15 clusters, plot the network formed from the cluster
-pdf("Output/GeneClusterNetworks.pdf", height=11, width=16)
-par(mfrow=c(3,5))
-for(i in 1:length(table(subGroups))) {
-  # Get the gene names in the i-th cluster
-  subGroupNames <- names(subGroups)[subGroups == i]
-  
-  # Form an adjacency matrix and the corresponding graph from those genes.
-  # Define an edge between genes if the Bayesian LLR2 > 0.9
-  adjBayesSubGroup <- (bayesLLR2Mat[subGroupNames, subGroupNames] > 0.9) + 0
-  subnetHierClust <- graph_from_adjacency_matrix(adjBayesSubGroup , mode='undirected', diag=F)
-  
-  # Form a dataframe out of the list of edges in the network, where each row
-  # defines an edge between the genes in columns 1 and 2. Add a third column
-  # containing the prior adjacency matrix value for each of those edges.
-  subnetEdges <- data.frame(as_edgelist(subnetHierClust))
-  colnames(subnetEdges) <- c("Gene1", "Gene2")
-  subnetEdges$Prior <- 0
-  for(j in 1:nrow(subnetEdges)) {
-    subnetEdges$Prior[j] <- priorMatrix[subnetEdges[j,"Gene1"], subnetEdges[j,"Gene2"]]
-  }
-  
-  # Write the dataframe to a CSV for this cluster
-  write.csv(subnetEdges, paste("Output/Cluster", i, "Edges.csv", sep=""), row.names=F)
-  
-  # Edges between genes with unknown associations will be blue, and edges 
-  # between genes with known associations will be red.
-  E(subnetHierClust)$color[is.na(subnetEdges$Prior)] <- 'blue'
-  E(subnetHierClust)$color[!is.na(subnetEdges$Prior)] <- alpha('red', 0.7)
-  
-  # Plot the network for this cluster on the PDF
-  numUnknownEdges <- sum(is.na(subnetEdges$Prior))
-  numKnownEdges <- sum(!is.na(subnetEdges$Prior))
-  plotTitle <- paste("Network from Cluster ", i, "\n(", length(subGroupNames), " genes; ", numKnownEdges, " known edges, ", numUnknownEdges, " unknown)", sep="")
-  plot(subnetHierClust, layout=layout_nicely, vertex.label=NA, vertex.size=5, 
-       edge.width=1, vertex.color="gray", vertex.frame.color="darkslategray", 
-       main=plotTitle, cex.main=1.5)
-}
-dev.off(); par(mfrow=c(1,1))
-
-# For each of the 15 clusters: take the set of genes with at least one blue edge,
-# Add all their neighbors (genes with at least one edge), plot the network
-pdf("Output/GeneClusterSubnetworks.pdf", height=12, width=12)
-for(i in 1:length(table(subGroups))) {
-  # Get the gene names in the i-th cluster
-  subGroupNames <- names(subGroups)[subGroups == i]
-  
-  # Form an adjacency matrix and the corresponding graph from those genes.
-  # Define an edge between genes if the Bayesian LLR2 > 0.9
-  adjBayesSubGroup <- (bayesLLR2Mat[subGroupNames, subGroupNames] > 0.9) + 0
-  subnetHierClust <- graph_from_adjacency_matrix(adjBayesSubGroup , mode='undirected', diag=F)
-  
-  # Form a dataframe out of the list of edges in the network, where each row
-  # defines an edge between the genes in columns 1 and 2. Add a third column
-  # containing the prior adjacency matrix value for each of those edges.
-  subnetEdges <- data.frame(as_edgelist(subnetHierClust))
-  colnames(subnetEdges) <- c("Gene1", "Gene2"); subnetEdges$Prior <- 0
-  for(j in 1:nrow(subnetEdges)) {
-    prior <- priorMatrix[subnetEdges[j,"Gene1"], subnetEdges[j,"Gene2"]]
-    subnetEdges$Prior[j] <- prior
-  }
-  
-  # Get the nodes (genes) with at least one unknown edge
-  unknownEdges <- subnetEdges[is.na(subnetEdges$Prior),]
-  nodesWithUnknownEdges <- unique(c(unknownEdges$Gene1, unknownEdges$Gene2))
-  
-  # Get the neighbors of the nodes with at least one unknown edge, store in allNodes
-  neighborNodes <- adjacent_vertices(subnetHierClust, nodesWithUnknownEdges)
-  allNodes <- c()
-  for(j in 1:length(neighborNodes)) {
-    allNodes <- c(allNodes, names(neighborNodes[j]), names(neighborNodes[[j]]))
-  }
-  allNodes <- unique(allNodes)
-  
-  # Form a new subnetwork out of allNodes
-  newAdjBayesSubGroup <- (bayesLLR2Mat[allNodes, allNodes] > 0.9) + 0
-  newSubnet <- graph_from_adjacency_matrix(newAdjBayesSubGroup , mode='undirected', diag=F)
-  
-  # Get a new subnetEdges dataframe corresponding to allNodes
-  newSubnetEdges <- data.frame(as_edgelist(newSubnet))
-  colnames(newSubnetEdges) <- c("Gene1", "Gene2"); newSubnetEdges$Prior <- 0
-  for(j in 1:nrow(newSubnetEdges)) {
-    prior <- priorMatrix[newSubnetEdges[j,"Gene1"], newSubnetEdges[j,"Gene2"]]
-    newSubnetEdges$Prior[j] <- prior
-  }
-  
-  # Edges between genes with unknown associations will be blue, and edges 
-  # between genes with known associations will be red.
-  E(newSubnet)$color[is.na(newSubnetEdges$Prior)] <- 'blue'
-  E(newSubnet)$color[!is.na(newSubnetEdges$Prior)] <- alpha('red', 0.7)
-  
-  # Plot the new subnetwork for this cluster on the PDF
-  numUnknownEdges <- sum(is.na(newSubnetEdges$Prior))
-  numKnownEdges <- sum(!is.na(newSubnetEdges$Prior))
-  plotTitle <- paste("Subnetwork from Cluster ", i, "\n(", length(allNodes), " genes; ", numKnownEdges, " known edges, ", numUnknownEdges, " unknown)", sep="")
-  if(i %in% c(2,7,9,12,14))
-    netLayout <- layout_with_lgl
-  else if(i %in% c(4,5,10,11))
-    netLayout <- layout_with_kk
-  else if(i %in% c(1,3,6,8,13))
-    netLayout <- layout_nicely
-  plot(newSubnet, layout=netLayout, vertex.size=8, vertex.label.family="Helvetica",
-       vertex.label.cex=0.5, edge.width=1.2, vertex.color=alpha("papayawhip", 0.85), vertex.frame.color="peachpuff3", 
-       main=plotTitle, cex.main=1.5)
-}
-dev.off()
-
-# For each of the 15 clusters, plot the time profiles of all genes in the cluster,
-# but color only the genes which had at least one unknown edge
-pdf("Output/GeneClustersWithUnknownAssociations.pdf", height=11, width=23)
-par(mfrow=c(3,5))
-plotColors <- c(brewer.pal(n=8, name="Dark2"), brewer.pal(n=8, name="Dark2"))
-for(i in 1:length(table(subGroups))) {
-  # Get the gene names in the i-th cluster
-  subGroupNames <- names(subGroups)[subGroups == i]
-  
-  # Form an adjacency matrix and the corresponding graph from those genes.
-  # Define an edge between genes if the Bayesian LLR2 > 0.9
-  adjBayesSubGroup <- (bayesLLR2Mat[subGroupNames, subGroupNames] > 0.9) + 0
-  subnetHierClust <- graph_from_adjacency_matrix(adjBayesSubGroup , mode='undirected', diag=F)
-  
-  # Form a dataframe out of the list of edges in the network, where each row
-  # defines an edge between the genes in columns 1 and 2. Add a third column
-  # containing the prior adjacency matrix value for each of those edges.
-  subnetEdges <- data.frame(as_edgelist(subnetHierClust))
-  colnames(subnetEdges) <- c("Gene1", "Gene2"); subnetEdges$Prior <- 0
-  for(j in 1:nrow(subnetEdges)) {
-    prior <- priorMatrix[subnetEdges[j,"Gene1"], subnetEdges[j,"Gene2"]]
-    subnetEdges$Prior[j] <- prior
-  }
-  
-  # Get the nodes (genes) with at least one edge
-  nodesWithEdges <- unique(c(subnetEdges$Gene1, subnetEdges$Gene2))
-  
-  # Get the nodes (genes) with at least one unknown edge
-  unknownEdges <- subnetEdges[is.na(subnetEdges$Prior),]
-  nodesWithUnknownEdges <- unique(c(unknownEdges$Gene1, unknownEdges$Gene2))
-
-  # Plot the time profiles
-  plotTitle=paste("Cluster ", i, ":  ", length(nodesWithEdges), " genes with at least one edge\n(", length(nodesWithUnknownEdges), " with at least one unknown edge)", sep="")
-  Plot.Gene.Group(nodesWithEdges[! nodesWithEdges %in% nodesWithUnknownEdges], monochrome="darkgray", points=F, 
-                  plotTitle=plotTitle, titleSize=1.5, genesForExtrema=nodesWithEdges)
-  if(length(nodesWithUnknownEdges) > 0) {
-    Plot.Gene.Group(nodesWithUnknownEdges, monochrome="dodgerblue3", points=F, 
-                    plotTitle=plotTitle, titleSize=1.5, add=T) 
-  }
-}
-dev.off(); par(mfrow=c(1,1))   
-
-
-
-
-# Create a list in which each entry is a vector of gene names in one cluster
-clusterList <- list()
-for(i in 1:length(table(subGroups))) { 
-  clusterList[[i]] <- names(subGroups)[subGroups == i]
-}
-save(clusterList, file="Output/GeneClusters.RData")
-
-# Alternatively, extract k=40 clusters and plot clusters with <= 37 genes
-k <- 40
-clusters <- cutree(hierClust, k=k);  table(clusters)
-pdf("Output/GeneClustersWithColors.pdf", height=9, width=11)
-par(mfrow=c(3,3))
-for(i in 1:k) {
-  if(i <= 37) { Plot.Gene.Group(geneNames[clusters == i]) }
-}
-dev.off(); par(mfrow=c(1,1))
-
-# --- R^2 scatterplots ---
-
-Draw.R2.Scatterplot(nonBayesLLR2Mat.other, nonBayesLLR2Mat - nonBayesLLR2Mat.own, 
-                    priorMatrix, geneSubset, interactive=F, bayes=F)
-
-Draw.R2.Scatterplot(bayesLLR2Mat.other, bayesLLR2Mat - bayesLLR2Mat.own, 
-                    priorMatrix, geneSubset, interactive=F, bayes=T)
-
-# --- Large heatmap of the Bayesian R^2 similarity matrix ---
-
-Draw.Heatmap.Diagonal.Block <- function(k) {
-  simMatrixSection <- melt(as.matrix(bayesLLR2Mat[k:(k+346), k:(k+346)]))
-  plotTitle <- paste("Diagonal block of LLR2 similarity matrix: Genes", k, "to", k+346)
-  ggplot(data=simMatrixSection, aes(x=Var2, y=Var1, fill=value)) + geom_tile() +
-    theme(axis.title.x = element_blank(), axis.title.y = element_blank()) +
-    theme(axis.text.x=element_text(angle=90, hjust=0.95,vjust=0.2)) +
-    scale_fill_distiller(palette="Blues", direction=1) + 
-    ggtitle(label=plotTitle) + theme(plot.title=element_text(size=40, face="bold")) +
-    theme(legend.position="none")
-}
-
-pdf("Output/HeatmapFullGeneSet.pdf", height=38, width=34)
-Draw.Heatmap.Diagonal.Block(1)
-Draw.Heatmap.Diagonal.Block(348)
-Draw.Heatmap.Diagonal.Block(695)
-Draw.Heatmap.Diagonal.Block(1042)
-Draw.Heatmap.Diagonal.Block(1389)
-dev.off()
-
-# --- Plots for manuscript ---
-
-
-
-# --- Histograms of R^2 ---
-
-# LLR2 distribution without priors
-histData <- as.data.frame(nonBayesLLR2Mat[upper.tri(nonBayesLLR2Mat)])
-colnames(histData) <- "LLR2"
-h1 <- ggplot(histData, aes(x=LLR2)) + 
-  geom_histogram(mapping=aes(y=..count../sum(..count..)), binwidth=0.02, color="skyblue3", fill="lightsteelblue1") +
-  theme_bw() + xlab(TeX("Lead-lag $R^2$")) + ylab("Density") +
-  ggtitle(TeX("Distribution of lead-lag $R^2$ values (without priors)")) +
-  theme(plot.title = element_text(hjust = 0.5))
-h1
-
-# 95th percentile of this distribution = 0.9479654 (0.95)
-quantile(histData$LLR2, 0.95)
-
-# LLR2 distribution with priors
-histData <- as.data.frame(bayesLLR2Mat[upper.tri(bayesLLR2Mat)])
-colnames(histData) <- "LLR2"
-h2 <- ggplot(histData, aes(x=LLR2)) + 
-  geom_histogram(mapping=aes(y=..count../sum(..count..)), binwidth=0.02, color="skyblue3", fill="lightsteelblue1") +
-  theme_bw() + xlab(TeX("Bayesian lead-lag $R^2$")) + ylab("Density") +
-  ggtitle(TeX("Distribution of Bayesian lead-lag $R^2$ values")) +
-  theme(plot.title = element_text(hjust = 0.5))
-h2
-
-# 95th percentile of this distribution = 0.7239886 (0.72)
-quantile(histData$LLR2, 0.95)
-
-# Side-by-side histograms
-grid.arrange(h1, h2, ncol=2)
-
-# LLR2 - LLR2.own distribution, with priors
-histData <- as.data.frame(bayesLLR2Mat[upper.tri(bayesLLR2Mat)] - bayesLLR2Mat.own[upper.tri(bayesLLR2Mat.own)])
-colnames(histData) <- "LLR2_diff"
-h3 <- ggplot(histData, aes(x=LLR2_diff)) + 
-  geom_histogram(mapping=aes(y=..count../sum(..count..)), binwidth=0.02, color="skyblue3", fill="lightsteelblue1") +
-  theme_bw() + xlab(TeX("Bayesian LL$R^2$ - LL$R^2_{own}$")) + ylab("Density") +
-  ggtitle(TeX("Distribution of Bayesian LL$R^2$ - LL$R^2_{own}$ values")) +
-  theme(plot.title = element_text(hjust = 0.5))
-h3
-
-# 95th quantile of this distribution = 0.2167662 (0.22)
-quantile(histData$LLR2_diff, 0.95)
-
-
-# Also involved in immune response: "IM1", "IM14", "IM2", "IM23", "IM3", "IM33", "IM4", "IMPPP"
-
-# --- Time profiles in each cluster ---
-
-clusterColors <- c("darkorange3", "dodgerblue3", "forestgreen", "darkmagenta", "indianred2", "orange4", "navy", "red2", "blueviolet", "turquoise4", "olivedrab", "darkslategray", "antiquewhite4", "coral4", "goldenrod2")
-monochrome <- T;  points <- F;  plotGrid <- T;  gg <- T;  titleSize <- 12
-plotList <- list()
-for(i in 1:length(table(subGroups))) {
-  plotList[[i]] <- Plot.Gene.Group(geneNames[subGroups == i], plotTitle=paste("Cluster ", i, " (", table(subGroups)[i], " genes)", sep=""), plotColors=clusterColors[i], monochrome=monochrome, points=points, gg=gg, plotGrid=plotGrid, titleSize=titleSize)
-}
-ggsave(file="Clusters.pdf", arrangeGrob(grobs=plotList, ncol=4), width=12, height=9, units="in")
-
-# --- Temporal profile plot selected genes in cluster 12 ---
+# --- Figure 7: Cluster 12 time profiles ---
 
 C12genes <- c("fbp", "to", "AGBE", "Galk", "Gba1b", "CG11594", "CG10469", "CG13315")
 C12colors <- c("black", "dodgerblue2", rep("orangered2", 3), rep("springgreen4", 3))
-Plot.Gene.Group(C12genes, plotColors=C12colors, plotGrid=T, titleSize=12,
+p <- Plot.Gene.Group(C12genes, plotColors=C12colors, plotLegend=FALSE,
                 plotTitle="<b>Selected genes from cluster 12</b>",
-                subtitle="(<span style='color:black;'>gene <i>fbp</i></span>; <span style='color:orangered2;'>genes involved in carbohydrate metabolism</span>;<br> <span style='color:springgreen4;'>uncharacterized genes</span>; <span style='color:dodgerblue2;'>gene <i>takeout</i></span>)")
+                plotSubtitle="(<span style='color:black;'>gene <i>fbp</i></span>; <span style='color:orangered2;'>genes involved in carbohydrate metabolism</span>;<br> <span style='color:springgreen4;'>uncharacterized genes</span>; <span style='color:dodgerblue2;'>gene <i>takeout</i></span>)")
+ggsave(file="Cluster12Genes.pdf", p, width=6, height=4.5, units="in")
 
-# --- Network of neighbors of gene "fbp" in cluster 12 ---
+# --- Figure 8: Cluster 12 subnetwork - neighbors of gene 'fbp' ---
 
-# Get all the neighbors of fbp
+# Get the entire network of genes (edge defined for LLR2 > 0.9)
+adjBayes <- (bayesLLR2Mat > 0.9) + 0
+networkBayes <- graph_from_adjacency_matrix(adjBayes , mode='undirected', diag=FALSE)
+
+# Get all neighbors of fbp
 fbpNeighbors <- adjacent_vertices(networkBayes, "fbp")
 fbpNeighbors <- c("fbp", names(fbpNeighbors[[1]]))
 
-# Form a new subnetwork out of fbp and neighborrs
+# Form a new subnetwork out of fbp and its neighbors
 fbpAdj <- (bayesLLR2Mat[fbpNeighbors, fbpNeighbors] > 0.9) + 0
 fbpNet <- graph_from_adjacency_matrix(fbpAdj , mode='undirected', diag=F)
 
-# Get a new dataframe of edges corresponding to fbpNeighbors
+# Get the priors associated with each edge in this subnetwork
 fbpEdges <- data.frame(as_edgelist(fbpNet))
 colnames(fbpEdges) <- c("Gene1", "Gene2"); fbpEdges$Prior <- 0
-for(j in 1:nrow(fbpEdges)) {
-  prior <- priorMatrix[fbpEdges[j,"Gene1"], fbpEdges[j,"Gene2"]]
-  fbpEdges$Prior[j] <- prior
-}
+fbpEdges$Prior <- unlist(apply(fbpEdges, 1, function(x) priorMatrix[x[1], x[2]]))
 
-# Edges between genes with unknown associations will be blue, and edges 
-# for known associations will be red
+# Blue edges between genes with unknown associations,
+# red edges between genes with known associations
 E(fbpNet)$color[is.na(fbpEdges$Prior)] <- alpha('blue', 0.1)
 E(fbpNet)$color[!is.na(fbpEdges$Prior)] <- alpha('red', 0.1)
 
@@ -466,93 +179,86 @@ E(fbpNet)$color[!is.na(fbpEdges$Prior)] <- alpha('red', 0.1)
 V(fbpNet)$color[as_ids(V(fbpNet)) == "fbp"] <- "navajowhite"
 V(fbpNet)$color[! as_ids(V(fbpNet)) == "fbp"] <- alpha("linen", 0.85)
 
-# Node frame colors
+# Set the node outline colors
 V(fbpNet)$frame.color[as_ids(V(fbpNet)) == "fbp"] <- "peachpuff3"
 V(fbpNet)$frame.color[! as_ids(V(fbpNet)) == "fbp"] <- "gray66"
 
-# Node sizes (a few highlighted nodes will be larger)
+# Set the node sizes (a few highlighted nodes will be larger)
 fbpNetHighlightNodes <- c("fbp", "Galk", "AGBE", "Gba1b", "CG11594", "CG10469", "CG13315") 
 V(fbpNet)$size[as_ids(V(fbpNet)) %in% fbpNetHighlightNodes] <- 17
 V(fbpNet)$size[! as_ids(V(fbpNet)) %in% fbpNetHighlightNodes] <- 7
 
-# Node names (text only for highlighted nodes)
+# Set the node names (displayed only for highlighted nodes)
 V(fbpNet)$label[! as_ids(V(fbpNet)) %in% fbpNetHighlightNodes] <- NA
 V(fbpNet)$label[as_ids(V(fbpNet)) %in% fbpNetHighlightNodes] <- fbpNetHighlightNodes
 
 # Darken edges for the highlighted nodes
 E(fbpNet)$color[which(fbpEdges$Gene1 == "fbp" & fbpEdges$Gene2 %in% fbpNetHighlightNodes)] <- "blue"
 
-# Plot the new subnetwork for fbp on a PDF
+# Plot the subnetwork on a PDF
 numUnknownEdges <- sum(is.na(fbpEdges$Prior))
 numKnownEdges <- sum(!is.na(fbpEdges$Prior))
-pdf("Output/fbpSubnetwork.pdf", height=6, width=6)
+pdf("fbpSubnetwork.pdf", height=6, width=6)
 plotTitle <- paste("Neighbors of gene \"fbp\" in cluster 12\n(", length(fbpNeighbors), " genes; ", numKnownEdges, " known edges, ", numUnknownEdges, " newly-identified edges)", sep="")
 plot(fbpNet, layout=layout_with_kk, vertex.label.family="Helvetica",
      vertex.label.cex=0.5, edge.width=1.2)
 title(plotTitle, cex.main=0.8, font.main=1)
 dev.off()
 
+# --- Figure 9: R^2 scatterplots ---
 
+geneSubset <- sample(geneNames, size=150)
+p1 <- Draw.R2.Scatterplot(nonBayesLLR2Mat, nonBayesLLR2Mat.other, nonBayesLLR2Mat.own, priorMatrix, geneSubset, interactive=F, plotTitle=latex2exp::TeX("Non-Bayesian lead-lag $R^2$ values"))
+p2 <- Draw.R2.Scatterplot(bayesLLR2Mat, bayesLLR2Mat.other, bayesLLR2Mat.own, priorMatrix, geneSubset, interactive=F)
+ggsave(file="R2Scatterplots.pdf", arrangeGrob(grobs=list(p1,p2), ncol=2), width=10, height=4, units="in")
 
-# --- R^2 scatterplots ---
+# --- Figure 10: Genes in middle/upper-right region of Bayesian LLR2 scatterplot ---
 
-# Non-interactive (for manuscript)
-p1 <- Draw.R2.Scatterplot(nonBayesLLR2Mat.other, nonBayesLLR2Mat-nonBayesLLR2Mat.own, priorMatrix, geneSubset, F, F)
-p2 <- Draw.R2.Scatterplot(bayesLLR2Mat.other, bayesLLR2Mat-bayesLLR2Mat.own, priorMatrix, geneSubset, T, F)
-grid.arrange(p1, p2, ncol=2)
-
-# Interactive
-Draw.R2.Scatterplot(bayesLLR2Mat.other, bayesLLR2Mat-bayesLLR2Mat.own, priorMatrix, geneSubset, T, T, F)
-
-# --- Gene pair examples from R^2 scatterplots ---
-
-# Plot settings
-plotLegend <- T;  legendPos <- "bottom";  plotGrid <- T;  titleSize <- 12
 plotColors <- c("dodgerblue2", "orangered2", "goldenrod", "forestGreen", "magenta", "navy", "chocolate1")
+p1 <- Plot.Gene.Group(c("CR42868", "AttD", "CG9616"), plotTitle="Genes: <i>CR42868, AttD, CG9616</i>", plotColors=plotColors)
+p2 <- Plot.Gene.Group(c("Spn28Dc", "CR43364", "CR42715", "scb"), plotTitle="Genes: <i>Spn28Dc, CR43364, CR42715, scb</i>", plotColors=plotColors)
+p3 <- Plot.Gene.Group(c("ACC", "Idh", "GstE9"), plotTitle="Genes: <i>ACC, Idh, GstE9</i>", plotColors=plotColors)
+ggsave(file="R2ScatterplotsMiddle.pdf", arrangeGrob(grobs=list(p1,p2,p3), ncol=3), width=13, height=3.9, units="in")
 
-# Middle region of scatterplot
-p1 <- Plot.Gene.Group(c("IMPPP", "CG43085", "CG30098"), plotTitle=expression(paste("Genes:  ", italic("IMPPP, CG43085, CG30098"))), plotLegend=plotLegend, legendPos=legendPos, plotGrid=plotGrid, titleSize=titleSize, plotColors=plotColors)
-p2 <- Plot.Gene.Group(c("CR42868", "AttD", "CG9616"), plotTitle=expression(paste("Genes:  ", italic("CR42868, AttD, CG9616"))), plotLegend=plotLegend, legendPos=legendPos, plotGrid=plotGrid, titleSize=titleSize, plotColors=plotColors)
-p3 <- Plot.Gene.Group(c("Spn28Dc", "CR43364", "CR42715", "scb"), plotTitle=expression(paste("Genes:  ", italic("Spn28Dc, CR43364, CR42715, scb"))), plotLegend=plotLegend, legendPos=legendPos, plotGrid=plotGrid, titleSize=titleSize, plotColors=plotColors)
-p4 <- Plot.Gene.Group(c("ACC", "Idh", "GstE9"), plotTitle=expression(paste("Genes:  ", italic("ACC, Idh, GstE9"))), plotLegend=plotLegend, legendPos=legendPos, plotGrid=plotGrid, titleSize=titleSize, plotColors=plotColors)
-grid.arrange(p2, p3, p4, ncol=3)
+# --- Figure 11: Genes in upper-right region of Bayesian LLR2 scatterplot ---
 
-# Upper-right region of scatterplot
-p1 <- Plot.Gene.Group(c("alphaTry", "gammaTry", "CG30025"), plotTitle=expression(paste("Genes:  ", italic("alphaTry, gammaTry, CG30025"))), plotLegend=plotLegend, legendPos=legendPos, plotGrid=plotGrid, titleSize=titleSize, plotColors=plotColors)
-p2 <- Plot.Gene.Group(c("RpS26", "RpS6", "RpL13", "RpL7"), plotTitle=expression(paste("Genes:  ", italic("RpS26, RpS6, RpL13, RpL7"))), plotLegend=plotLegend, legendPos=legendPos, plotGrid=plotGrid, titleSize=titleSize, plotColors=plotColors)
-p3 <- Plot.Gene.Group(c("Nsun2", "CG9143", "nop5", "CG13096"), plotTitle=expression(paste("Genes:  ", italic("Nsun2, CG9143, nop5, CG13096"))), plotLegend=plotLegend, legendPos=legendPos, plotGrid=plotGrid, titleSize=titleSize, plotColors=plotColors)
-p4 <- Plot.Gene.Group(c("CG13096", "l(1)G0020", "Nop56"), plotTitle=expression(paste("Genes:  ", italic("CG13096, l(1)G0020, Nop56"))), plotLegend=plotLegend, legendPos=legendPos, plotGrid=plotGrid, titleSize=titleSize, plotColors=plotColors)
-grid.arrange(p1, p2, p4, ncol=3)
+plotColors <- c("dodgerblue2", "orangered2", "goldenrod", "forestGreen", "magenta", "navy", "chocolate1")
+p1 <- Plot.Gene.Group(c("alphaTry", "gammaTry", "CG30025"), plotTitle="Genes: <i>alphaTry, gammaTry, CG30025</i>", plotColors=plotColors)
+p2 <- Plot.Gene.Group(c("RpS26", "RpS6", "RpL13", "RpL7"), plotTitle="Genes: <i>RpS26, RpS6, RpL13, RpL7</i>", plotColors=plotColors)
+p3 <- Plot.Gene.Group(c("CG13096", "l(1)G0020", "Nop56"), plotTitle="Genes: <i>CG13096, l(1)G0020, Nop56</i>", plotColors=plotColors)
+ggsave(file="R2ScatterplotsRight.pdf", arrangeGrob(grobs=list(p1,p2,p3), ncol=3), width=13, height=3.9, units="in")
 
-# --- Selected genes in cluster 2 ---
+# --- Figure 12: Cluster 2 time profiles ---
 
 circadian <- c("tim", "per", "Clk", "vri", "Pdp1")
 cuticle <- c("Cpr49Ab", "Cpr49Ae", "Cpr62Ba", "Cpr72Ec")
 dopSynth <- c("e", "ple")
 C2colors <- c(rep("black", 3), "orange", "red", rep("pink2", 4), rep("purple", 2))
-Plot.Gene.Group(c(circadian, cuticle, dopSynth), plotColors=C2colors, plotGrid=T,
-                plotTitle="<b>Selected genes from cluster 2<b>", titleSize=12,
-                subtitle="(Regulators of circadian clock: <i>tim, per, Clk, <span style='color:darkorange;'>vri</span>, <span style='color:red;'>Pdp1</i></span>;<br> <span style='color:lightpink3;'>genes that encode cuticle proteins</span>; <span style='color:purple;'>genes involved in dopamine synthesis</span>)")
+p <- Plot.Gene.Group(c(circadian, cuticle, dopSynth), plotColors=C2colors,
+                plotTitle="<b>Selected genes from cluster 2<b>", plotLegend=FALSE,
+                plotSubtitle="(Regulators of circadian clock: <i>tim, per, Clk, <span style='color:darkorange;'>vri</span>, <span style='color:red;'>Pdp1</i></span>;<br> <span style='color:lightpink3;'>genes that encode cuticle proteins</span>; <span style='color:purple;'>genes involved in dopamine synthesis</span>)")
+ggsave(file="Cluster2Genes.pdf", p, width=6, height=4.5, units="in")
 
-# --- Selected genes in cluster 9 ---
-
-maltaseUp <- c("Mal-A1", "Mal-A6", "Mal-A7", "Mal-A8")
-hemoDown <- c("NimC1", "NimB4", "eater", "Hml")
-other <- c("Galphaf", "tobi")
-C9colors <- c(rep(alpha("orangered3", 0.7), 4), rep(alpha("black", 0.8), 4), "green3", "dodgerblue2")
-Plot.Gene.Group(c(maltaseUp, hemoDown, other), plotColors=C9colors, plotGrid=T,
-                plotTitle="<b>Selected genes from cluster 9<b>", titleSize=12, plotTimes=hours[1:11],
-                subtitle="(<span style='color:orangered3;'>up-regulated</span><span style='color:white;'> l</span><span style='color:orangered3;'>maltases</span>; down-regulated<span style='color:white;'> l</span>genes expressed in hemocytes;<br> <span style='color:dodgerblue2;'>gene <i>Galphaf</i></span>; <span style='color:green3;'>gene <i>tobi</i></span>)")
-
-# --- Selected genes in cluster 5 ---
-# Dimensions of plot: 5.8 x 4.48 inches
+# --- Figure 13: Cluster 5 time profiles ---
 
 ribosome <- c("nop5", "Fib", "Nop60B", "CG12301", "CG32409", "U3-55K")
 fattyAcid <- c("FASN1", "ACC", "AcCoAS", "ATPCL", "mino")
 fasn1New <- c("CG3756", "CG3940", "CG8036", "eRF1", "aralar1", "CG32409", "CG31904", "CG15120", "CG1640", "CG16926") # CG32904 is CG32409?
 lipidCat <- c("dob", "Lip2", "Lsd-1")
 C5colors <- c(rep(alpha("orangered3", 0.7), 6), rep(alpha("blue2", 0.7), 5), rep(alpha("chartreuse3", 0.75), 10), rep(alpha("black", 0.7), 3))
-Plot.Gene.Group(c(ribosome, fattyAcid, fasn1New, lipidCat), plotColors=C5colors, plotGrid=T,
-                plotTitle="<b>Selected genes from cluster 5</b>", titleSize=12, plotTimes=hours[1:12],
-                subtitle="(<span style='color:orangered3;'>ribosome biogenesis</span>; <span style='color:black;'>lipid catabolism</span>; <span style='color:blue2;'>fatty acid biosynthesis</span>;<br><span style='color:chartreuse3;'>genes with uncharacterized relationships to <i>FASN1</i></span>)")
+p <- Plot.Gene.Group(c(ribosome, fattyAcid, fasn1New, lipidCat), plotColors=C5colors, plotLegend=FALSE,
+                plotTitle="<b>Selected genes from cluster 5</b>", plotTimes=hours[1:12],
+                plotSubtitle="(<span style='color:orangered3;'>ribosome biogenesis</span>; <span style='color:black;'>lipid catabolism</span>; <span style='color:blue2;'>fatty acid biosynthesis</span>;<br><span style='color:chartreuse3;'>genes with uncharacterized relationships to <i>FASN1</i></span>)")
+ggsave(file="Cluster5Genes.pdf", p, width=6, height=4.5, units="in")
+
+# --- Figure 14: Cluster 9 time profiles ---
+
+maltaseUp <- c("Mal-A1", "Mal-A6", "Mal-A7", "Mal-A8")
+hemoDown <- c("NimC1", "NimB4", "eater", "Hml")
+other <- c("Galphaf", "tobi")
+C9colors <- c(rep(alpha("orangered3", 0.7), 4), rep(alpha("black", 0.8), 4), "green3", "dodgerblue2")
+p <- Plot.Gene.Group(c(maltaseUp, hemoDown, other), plotColors=C9colors, plotLegend=FALSE,
+                plotTitle="<b>Selected genes from cluster 9<b>", plotTimes=hours[1:11],
+                plotSubtitle="(<span style='color:orangered3;'>up-regulated</span><span style='color:white;'> l</span><span style='color:orangered3;'>maltases</span>; down-regulated<span style='color:white;'> l</span>genes expressed in hemocytes;<br> <span style='color:dodgerblue2;'>gene <i>Galphaf</i></span>; <span style='color:green3;'>gene <i>tobi</i></span>)")
+ggsave(file="Cluster9Genes.pdf", p, width=6, height=4.5, units="in")
 

@@ -160,7 +160,7 @@ Draw.R2.Scatterplot <- function(LLR2, LLR2other, LLR2own, priorMatrix, geneSubse
   }
   # Further settings for non-interactive scatterplot
   else {
-    p + labs(title=ifelse(plotTitle == "", latex2exp::TeX("Bayesian lead-lag $R^2$ values"), plotTitle), x=latex2exp::TeX("LLR^2_{other}"), y=latex2exp::TeX("LLR^2 - LLR^2_{own}")) + 
+    p + labs(title=ifelse(class(plotTitle) != "expression" && plotTitle == "", latex2exp::TeX("Bayesian lead-lag $R^2$ values"), plotTitle), x=latex2exp::TeX("LLR^2_{other}"), y=latex2exp::TeX("LLR^2 - LLR^2_{own}")) + 
       theme(legend.position="bottom", legend.background=element_rect(size=0.1, linetype="solid", color="black")) + guides(color=guide_legend(override.aes=list(size=3)))
   }
 }
