@@ -1,5 +1,7 @@
 # --- Read in R^2 matrices ---
 
+library(gridExtra)
+
 # If reading these files, run DatasetLoader.R and PlottingFunctions.R first.
 
 nonBayesLLR2Mat <- read.csv(paste("../Processed Data/R-Squared (", subdirectory, ")/NonBayesLLR2.csv", sep=""), row.names=1)
@@ -35,7 +37,7 @@ subnetworkNonBayes <- induced_subgraph(networkNonBayes, V(networkNonBayes)[netwo
 plot(subnetworkNonBayes, layout=layout.fruchterman.reingold, vertex.label=NA, vertex.size=4, vertex.frame.color="darkslategray",edge.width=0.5)#vertex.color=cluster_label_prop(subnetworkNonBayes)$membership, vertex.frame.color="black")
 
 # Bayesian analysis
-adjBayes <- (bayesLLR2Mat > 0.95) + 0
+adjBayes <- (bayesLLR2Mat > 0.90) + 0
 networkBayes <- graph_from_adjacency_matrix(adjBayes , mode='undirected', diag=F)
 plot(networkBayes, layout=layout_nicely, vertex.label=NA, vertex.size=3, vertex.color=cluster_label_prop(networkBayes)$membership)
 
@@ -56,7 +58,7 @@ plot(hierClust)
 # Cut the dendrogram at ~ 9 or 10 (yields 15 clusters)
 subGroups <- cutree(hierClust, h=9)
 table(subGroups)
-Plot.Gene.Group(geneNames[subGroups == 14], T, F)
+Plot.Gene.Group(geneNames[subGroups == 15], T, F)
 
 # For each of the 15 clusters, plot the network formed from the cluster
 pdf("Output/GeneClusterNetworks.pdf", height=11, width=16)
@@ -239,10 +241,10 @@ dev.off(); par(mfrow=c(1,1))
 # --- R^2 scatterplots ---
 
 Draw.R2.Scatterplot(nonBayesLLR2Mat.other, nonBayesLLR2Mat - nonBayesLLR2Mat.own, 
-                    priorMatrix, geneSubset, interactive=F)
+                    priorMatrix, geneSubset, interactive=F, bayes=F)
 
 Draw.R2.Scatterplot(bayesLLR2Mat.other, bayesLLR2Mat - bayesLLR2Mat.own, 
-                    priorMatrix, geneSubset, interactive=F)
+                    priorMatrix, geneSubset, interactive=F, bayes=T)
 
 # --- Large heatmap of the Bayesian R^2 similarity matrix ---
 
@@ -327,8 +329,9 @@ quantile(histData$LLR2_diff, 0.95)
 
 # --- Known and uncharacterized genes (Figure 2) ---
 
-grid.arrange(Plot.Gene.Group(c("per", "tim", "to", "vri", "CG11854", "CG18609", "Pdp1", "CG33511"), plotGrid=T, plotLegend=T, titleSize=12, plotTitle="Known and uncharacterized genes\n with circadian rhythm patterns"),
-             Plot.Gene.Group(c("AttC", "DptA", "DptB", "Dro", "edin", "Mtk", "CG43920", "CR44404", "CR45045"), plotGrid=T, plotLegend=T, titleSize=12, plotTitle="Known and uncharacterized genes\n with immune response functions"), ncol=2)
+p1 <- Plot.Gene.Group(c("per", "tim", "to", "vri", "CG11854", "CG18609", "Pdp1", "CG33511"), plotGrid=T, plotLegend=T, titleSize=12, plotTitle="Known and uncharacterized genes<br> with circadian rhythm patterns")
+p2 <- Plot.Gene.Group(c("AttC", "DptA", "DptB", "Dro", "edin", "Mtk", "CG43920", "CG44404", "CG45045"), plotGrid=T, plotLegend=T, titleSize=12, plotTitle="Known and uncharacterized genes<br> with immune response functions")
+ggsave(file="Output/CircadianAndImmunePatterns.pdf", arrangeGrob(grobs=list(p1,p2), ncol=2), width=10, height=4.5, units="in")
 
 # Also involved in immune response: "IM1", "IM14", "IM2", "IM23", "IM3", "IM33", "IM4", "IMPPP"
 
@@ -346,12 +349,12 @@ ggsave(file="Clusters.pdf", arrangeGrob(grobs=plotList, ncol=4), width=12, heigh
 
 imdGenes <- c("AttA", "AttB", "AttC", "Dro", "CecA2", "DptA", "DptB", "PGRP-SB1")
 tollGenes <- c("PGRP-SA", "IMPPP", "IM1", "IM2", "IM4", "IM14", "IM23", "BomS3")
-newGenes <- c("CR44404", "CG43236", "CG43202", "CG43920")
+newGenes <- c("CG44404", "CG43236", "CG43202", "CG43920")
 negativeGenes <- c("Acp1", "CG7214")
-C7colors <- c(rep(alpha("orangered2", 0.65), 8), rep(alpha("dodgerblue3", 0.65), 8), rep(alpha("black", 0.65), 4), rep(alpha("forestgreen", 0.65), 2))
-Plot.Gene.Group(c(imdGenes, tollGenes, newGenes, negativeGenes), plotColors=C7colors, 
-                plotGrid=T, plotTitle="<b>Selected genes from cluster 7</b>", titleSize=12,
-                subtitle="(<span style='color:orangered2;'>Imd-regulated</span><span style='color:white;'> l</span><span style='color:orangered2;'>genes</span>; <span style='color:dodgerblue3;'>Toll-regulated genes</span>; <span style='color:forestgreen;'>cuticle proteins</span>;<br> <span style='color:black;'>genes potentially associated with Imd signaling</span>)")
+C7colors <- c(rep(alpha("orangered2", 0.65), 8), rep(alpha("dodgerblue3", 0.65), 8), rep(alpha("black", 0.75), 4), rep(alpha("forestgreen", 0.65), 2))
+Plot.Gene.Group(c(imdGenes, tollGenes, newGenes, negativeGenes), plotColors=C7colors, plotTimes=hours[1:8],
+                plotGrid=T, plotTitle="<b>Selected genes from cluster 7</b>", titleSize=12, 
+                subtitle="(<span style='color:orangered2;'>Imd-regulated</span><span style='color:white;'> l</span><span style='color:orangered2;'>genes</span>; <span style='color:dodgerblue3;'>Toll-regulated genes</span>; <span style='color:forestgreen;'>genes that encode cuticle proteins</span>;<br><span style='color:black;'>genes potentially associated with Imd signaling</span>)")
 
 # --- Network of unknown genes in cluster 7 ---
 
@@ -467,7 +470,7 @@ dev.off()
 # --- Small-scale case study (immune response/metabolism) ---
 
 immMetGenes <- c("IM1", "IM2", "FASN1", "UGP", "mino", "fbp")
-p <- Plot.Gene.Group(immMetGenes, plotGrid=T, plotLegend=T, plotTitle="Subset of genes involved in immune response<br> (IM1, IM2) and metabolism (FASN1, UGP, mino, fbp)", titleSize=12, legendPos="bottom")
+p <- Plot.Gene.Group(immMetGenes, plotGrid=T, plotLegend=T, plotTitle="Selected genes involved in immune response<br> (<i>IM1, IM2</i>) and metabolism (<i>FASN1, UGP, mino, fbp</i>)", titleSize=12, legendPos="bottom")
 p + guides(colour=guide_legend(nrow=1))
 priorMatrix[immMetGenes, immMetGenes]
 round(bayesLLR2Mat[immMetGenes, immMetGenes], 2)
@@ -510,7 +513,7 @@ dopSynth <- c("e", "ple")
 C2colors <- c(rep("black", 3), "orange", "red", rep("pink2", 4), rep("purple", 2))
 Plot.Gene.Group(c(circadian, cuticle, dopSynth), plotColors=C2colors, plotGrid=T,
                 plotTitle="<b>Selected genes from cluster 2<b>", titleSize=12,
-                subtitle="(Regulators of circadian clock: <i>tim, per, Clk, <span style='color:darkorange;'>vri</span>, <span style='color:red;'>Pdp1</i></span>;<br> <span style='color:lightpink3;'>cuticle proteins</span>; <span style='color:purple;'>genes involved in dopamine synthesis</span>)")
+                subtitle="(Regulators of circadian clock: <i>tim, per, Clk, <span style='color:darkorange;'>vri</span>, <span style='color:red;'>Pdp1</i></span>;<br> <span style='color:lightpink3;'>genes that encode cuticle proteins</span>; <span style='color:purple;'>genes involved in dopamine synthesis</span>)")
 
 # --- Selected genes in cluster 9 ---
 
