@@ -1,13 +1,13 @@
 # --- Script 2: Bayesian lead-lag R^2 computations ---
 
-# This script implements an optimized version of Algorithm 1
-# (Appendix A.2) in our paper.
+# This script implements an optimized version of Algorithm 1 (Appendix A.2)
+# in our paper. Approximate timing: 22 minutes for 1735 genes on a 2017 3.1
+# GHz Intel Core i5 MacBook Pro.
 
-# Requirements: Run the script "1_DatasetLoader.R" first.
+# Run the script "1_DatasetLoader.R" first to load gene expression data
+source("1_DatasetLoader.R")
 
-# Approximate timing: 22 minutes for 1735 genes on a 2017
-# 3.1 GHz Intel Core i5 MacBook Pro.
-
+# Load parallel computing package
 library(parallel)
 
 # Start the timer for this script

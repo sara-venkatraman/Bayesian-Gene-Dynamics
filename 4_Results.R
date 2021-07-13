@@ -1,26 +1,148 @@
-# --- Read in R^2 matrices ---
+# --- Script 4: Results ---
 
+# This script produces all figures in our paper.
+
+# Requirements: Run the scripts "1_DatasetLoader.R", "2_LLR2Calculations.R"
+# (to produce the three lead-lag R^2 similarity matrices) and 
+# "3_PlottingFunctions.R" first.
+
+# TODO: fix above comments on which scripts to load
+
+source("1_DatasetLoader.R")
+source("3_PlottingFunctions.R")
+
+# Load library for arranging multiple plots on a grid
 library(gridExtra)
 
-# If reading these files, run DatasetLoader.R and PlottingFunctions.R first.
+nonBayesLLR2Mat <- read.csv("../Processed Data/R-Squared (Combined Genes)/NonBayesLLR2.csv", row.names=1)
+nonBayesLLR2Mat.other <- read.csv("../Processed Data/R-Squared (Combined Genes)/NonBayesLLR2_Other.csv", row.names=1)
+nonBayesLLR2Mat.own <- read.csv("../Processed Data/R-Squared (Combined Genes)/NonBayesLLR2_Own.csv", row.names=1)
+colnames(nonBayesLLR2Mat) <- rownames(nonBayesLLR2Mat)
+colnames(nonBayesLLR2Mat.other) <- rownames(nonBayesLLR2Mat.other)
+colnames(nonBayesLLR2Mat.own) <- rownames(nonBayesLLR2Mat.own)
 
-nonBayesLLR2Mat <- read.csv(paste("../Processed Data/R-Squared (", subdirectory, ")/NonBayesLLR2.csv", sep=""), row.names=1)
-nonBayesLLR2Mat.other <- read.csv(paste("../Processed Data/R-Squared (", subdirectory, ")/NonBayesLLR2_Other.csv", sep=""), row.names=1)
-nonBayesLLR2Mat.own <- read.csv(paste("../Processed Data/R-Squared (", subdirectory, ")/NonBayesLLR2_Own.csv", sep=""), row.names=1)
-nonBayesLLR2DiffMat <- nonBayesLLR2Mat - nonBayesLLR2Mat.own
-rownames(nonBayesLLR2Mat) <- geneNames;  colnames(nonBayesLLR2Mat) <- geneNames
-rownames(nonBayesLLR2Mat.other) <- geneNames;  colnames(nonBayesLLR2Mat.other) <- geneNames
-rownames(nonBayesLLR2Mat.own) <- geneNames;  colnames(nonBayesLLR2Mat.own) <- geneNames
-rownames(nonBayesLLR2DiffMat) <- geneNames;  colnames(nonBayesLLR2DiffMat) <- geneNames
+bayesLLR2Mat <- read.csv("../Processed Data/R-Squared (Combined Genes)/BayesLLR2.csv", row.names=1)
+bayesLLR2Mat.other <- read.csv("../Processed Data/R-Squared (Combined Genes)/BayesLLR2_Other.csv", row.names=1)
+bayesLLR2Mat.own <- read.csv("../Processed Data/R-Squared (Combined Genes)/BayesLLR2_Own.csv", row.names=1)
+colnames(bayesLLR2Mat) <- rownames(bayesLLR2Mat)
+colnames(bayesLLR2Mat.other) <- rownames(bayesLLR2Mat.other)
+colnames(bayesLLR2Mat.own) <- rownames(bayesLLR2Mat.own)
 
-bayesLLR2Mat <- read.csv(paste("../Processed Data/R-Squared (", subdirectory, ")/BayesLLR2.csv", sep=""), row.names=1)
-bayesLLR2Mat.other <- read.csv(paste("../Processed Data/R-Squared (", subdirectory, ")/BayesLLR2_Other.csv", sep=""), row.names=1)
-bayesLLR2Mat.own <- read.csv(paste("../Processed Data/R-Squared (", subdirectory, ")/BayesLLR2_Own.csv", sep=""), row.names=1)
-bayesLLR2DiffMat <- bayesLLR2Mat - bayesLLR2Mat.own
-rownames(bayesLLR2Mat) <- geneNames;  colnames(bayesLLR2Mat) <- geneNames
-rownames(bayesLLR2Mat.other) <- geneNames;  colnames(bayesLLR2Mat.other) <- geneNames
-rownames(bayesLLR2Mat.own) <- geneNames;  colnames(bayesLLR2Mat.own) <- geneNames
-rownames(bayesLLR2DiffMat) <- geneNames;  colnames(bayesLLR2DiffMat) <- geneNames
+# --- Figure 1: known and unknown circadian rhythm, immune response genes ---
+
+p1 <- Plot.Gene.Group(c("per", "tim", "to", "vri", "CG11854", "CG18609", "Pdp1", "CG33511"), plotTitle="Known and uncharacterized genes<br> with circadian rhythm patterns")
+p2 <- Plot.Gene.Group(c("AttC", "DptA", "DptB", "Dro", "edin", "Mtk", "CG43920", "CG44404", "CG45045"), plotTitle="Known and uncharacterized genes<br> with immune response functions")
+ggsave(file="CircadianAndImmunePatterns.pdf", arrangeGrob(grobs=list(p1,p2), ncol=2), width=10, height=4.5, units="in")
+
+# --- Figure 2: inflated lead-lag R^2 ---
+
+p1 <- Plot.Gene.Group(c("Act87E", "bmm"), plotTitle="Gene A: <i>Act87E</i>, Gene B: <i>bmm</i>", plotColors=c("dodgerblue2","orangered2"))
+p2 <- Plot.Gene.Group(c("Act79B", "Mal-A7"), plotTitle="Gene A: <i>Act79B</i>, Gene B: <i>Mal-A7</i>", plotColors=c("dodgerblue2","orangered2"))
+p3 <- Plot.Gene.Group(c("BomS3", "tok"), plotTitle="Gene A: <i>BomS3</i>, Gene B: <i>tok</i>", plotColors=c("dodgerblue2","orangered2"))
+ggsave(file="InflatedLLR2.pdf", arrangeGrob(grobs=list(p1,p2,p3), ncol=3), width=12.5, height=4, units="in")
+
+# Print non-Bayes lead-lag R^2 values
+nonBayesLLR2Mat["bmm", "Act87E"]
+nonBayesLLR2Mat["Mal-A7", "Act79B"]
+nonBayesLLR2Mat["tok", "IM3"]
+
+# --- Figure 3 and Tables 1-3: immunity/metabolism case study ---
+
+immuneMetabolicGenes <- c("IM1", "IM2", "FASN1", "UGP", "mino", "fbp")
+p <- Plot.Gene.Group(immuneMetabolicGenes, plotTitle="Selected genes involved in immune response<br> (<i>IM1, IM2</i>) and metabolism (<i>FASN1, UGP, mino, fbp</i>)", titleSize=12) + guides(color=guide_legend(nrow=1))
+ggsave(file="ImmuneMetabolic.pdf", p, width=5.8, height=4.48, units="in")
+
+# Print corresponding section of prior adjacency matrix
+priorMatrix[immuneMetabolicGenes, immuneMetabolicGenes]
+
+# Print corresponding sections of Bayesian LLR2 and LLR2 - LLR2_own matrices
+# TODO: include asymmetry
+round(bayesLLR2Mat[immuneMetabolicGenes, immuneMetabolicGenes], 2)
+round(bayesLLR2Mat[immuneMetabolicGenes, immuneMetabolicGenes] - bayesLLR2Mat.own[immuneMetabolicGenes, immuneMetabolicGenes], 2)
+
+# --- Figure 4: Hierarchical clustering ---
+
+# Compute distance matrix and cluster via Ward's method
+hierClust <- hclust(as.dist(1 - bayesLLR2Mat), method="ward.D")
+
+# Cut the dendrogram at height (yields 15 clusters; use "plot(hierClust)" for dendogram
+subGroups <- cutree(hierClust, h=9)
+table(subGroups)
+
+# For each of the 15 clusters, plot the time profiles of all genes in the cluster
+plotList <- list()
+plotColors <- c("darkorange3", "dodgerblue3", "forestgreen", "darkmagenta", "indianred2", "orange4", "navy", "red2", "blueviolet", "turquoise4", "olivedrab", "darkslategray", "antiquewhite4", "coral4", "goldenrod2")
+for(i in 1:length(table(subGroups))) {
+  numGenesInCluster <- length(geneNames[subGroups == i])
+  plotList[[i]] <- Plot.Gene.Group(geneNames[subGroups == i], plotColors=rep(plotColors[i], numGenesInCluster), points=FALSE, 
+                                   plotTitle=paste("Cluster ", i, " (", numGenesInCluster, " genes)", sep=""), titleSize=12,
+                                   plotLegend=FALSE, lineOpacity=0.2)
+}
+ggsave(file="Clusters.pdf", arrangeGrob(grobs=plotList, ncol=4), width=12, height=9, units="in")
+
+# --- Figure 5: Cluster 7 time profiles ---
+
+imdGenes <- c("AttA", "AttB", "AttC", "Dro", "CecA2", "DptA", "DptB", "PGRP-SB1")
+tollGenes <- c("PGRP-SA", "IMPPP", "IM1", "IM2", "IM4", "IM14", "IM23", "BomS3")
+newGenes <- c("CG44404", "CG43236", "CG43202", "CG43920")
+negativeGenes <- c("Acp1", "CG7214")
+C7colors <- c(rep(alpha("orangered2", 0.65), 8), rep(alpha("dodgerblue3", 0.65), 8), rep(alpha("black", 0.75), 4), rep(alpha("forestgreen", 0.65), 2))
+p <- Plot.Gene.Group(c(imdGenes, tollGenes, newGenes, negativeGenes), plotColors=C7colors, plotTimes=hours[1:8],
+                plotLegend=FALSE, plotTitle="<b>Selected genes from cluster 7</b>",
+                plotSubtitle="(<span style='color:orangered2;'>Imd-regulated</span><span style='color:white;'> l</span><span style='color:orangered2;'>genes</span>; <span style='color:dodgerblue3;'>Toll-regulated genes</span>; <span style='color:forestgreen;'>genes that encode cuticle proteins</span>;<br><span style='color:black;'>genes potentially associated with Imd signaling</span>)")
+ggsave(file="Cluster7Genes.pdf", p, width=6, height=4.5, units="in")
+
+# --- Figure 6: Cluster 7 subnetwork ---
+
+newGenes <- c("CG44404", "CG43236", "CG43202", "CG43920")
+
+# Get the entire network of genes
+adjBayes <- (bayesLLR2Mat > 0.9) + 0
+networkBayes <- graph_from_adjacency_matrix(adjBayes , mode='undirected', diag=F)
+
+# Get all the neighbors of the unknown genes in cluster 7
+unknownC7neighbors <- adjacent_vertices(networkBayes, newGenes)
+
+# Collapse this list of neighbors into one vector of nodes
+allNodes <- c()
+for(j in 1:length(unknownC7neighbors))
+  allNodes <- c(allNodes, names(unknownC7neighbors[j]), names(unknownC7neighbors[[j]]))
+allNodes <- unique(allNodes)
+
+# Form a new subnetwork out of allNodes
+C7adj <- (bayesLLR2Mat[allNodes, allNodes] > 0.9) + 0
+C7net <- graph_from_adjacency_matrix(C7adj , mode='undirected', diag=F)
+
+# Get a new dataframe of edges corresponding to allNodes
+C7edges <- data.frame(as_edgelist(C7net))
+colnames(C7edges) <- c("Gene1", "Gene2"); C7edges$Prior <- 0
+for(j in 1:nrow(C7edges)) {
+  prior <- priorMatrix[C7edges[j,"Gene1"], C7edges[j,"Gene2"]]
+  C7edges$Prior[j] <- prior
+}
+
+# Edges between genes with unknown associations will be blue, and edges 
+# for known associations will be red
+E(C7net)$color[is.na(C7edges$Prior)] <- alpha('blue', 0.7)
+E(C7net)$color[!is.na(C7edges$Prior)] <- alpha('red', 0.7)
+
+# The four novel genes will be colored differently
+V(C7net)$color[as_ids(V(C7net)) %in% newGenes] <- alpha("navajowhite", 0.95)
+V(C7net)$color[! as_ids(V(C7net)) %in% newGenes] <- alpha("linen", 0.85)
+
+# Node frame colors
+V(C7net)$frame.color[as_ids(V(C7net)) %in% newGenes] <- "peachpuff3"
+V(C7net)$frame.color[! as_ids(V(C7net)) %in% newGenes] <- "gray66"
+
+# Plot the new subnetwork for cluster 7 on a PDF (note: network layout is random)
+numUnknownEdges <- sum(is.na(C7edges$Prior))
+numKnownEdges <- sum(!is.na(C7edges$Prior))
+pdf("Output/Cluster7Subnetwork.pdf", height=6, width=6)
+plotTitle <- paste("New relationships detected in cluster 7\n(", length(allNodes), " genes; ", numKnownEdges, " previously-known edges, ", numUnknownEdges, " newly-identified edges)", sep="")
+plot(C7net, layout=layout_with_lgl, vertex.size=21, vertex.label.family="Helvetica",
+     vertex.label.cex=0.5, edge.width=1.2)
+title(plotTitle, cex.main=0.8, font.main=1)
+dev.off()
 
 # --- Network diagrams ---
 
@@ -49,16 +171,6 @@ subnetworkBayes <- induced_subgraph(networkBayes, V(networkBayes)[networkBayesCo
 plot(subnetworkBayes, layout=layout_with_kk, vertex.label=NA, vertex.size=4.5, edge.width=0.7, vertex.color=cluster_label_prop(subnetworkBayes)$membership, vertex.frame.color="darkslategray", edge.color="dimgray")
 
 # --- Hierarchical clustering from Bayesian analysis ---
-
-# Compute distance matrix and cluster via Ward's method
-distMatrix <- 1 - bayesLLR2Mat
-hierClust <- hclust(as.dist(distMatrix), method="ward.D")
-plot(hierClust)
-
-# Cut the dendrogram at ~ 9 or 10 (yields 15 clusters)
-subGroups <- cutree(hierClust, h=9)
-table(subGroups)
-Plot.Gene.Group(geneNames[subGroups == 15], T, F)
 
 # For each of the 15 clusters, plot the network formed from the cluster
 pdf("Output/GeneClusterNetworks.pdf", height=11, width=16)
@@ -210,16 +322,7 @@ for(i in 1:length(table(subGroups))) {
 dev.off(); par(mfrow=c(1,1))   
 
 
-# For each of the 15 clusters, plot the time profiles of all genes in the cluster
-pdf("Output/GeneClusters.pdf", height=11, width=23)
-par(mfrow=c(3,5))
-plotColors <- c(brewer.pal(n=8, name="Dark2"), brewer.pal(n=8, name="Dark2"))
-for(i in 1:length(table(subGroups))) {
-  plotTitle=paste("Cluster ", i, " (", length(geneNames[subGroups == i]), " genes)", sep="")
-  Plot.Gene.Group(geneNames[subGroups == i], monochrome=plotColors[i], points=F, 
-                  plotTitle=plotTitle, titleSize=1.5)
-}
-dev.off(); par(mfrow=c(1,1))
+
 
 # Create a list in which each entry is a vector of gene names in one cluster
 clusterList <- list()
@@ -269,19 +372,7 @@ dev.off()
 
 # --- Plots for manuscript ---
 
-# --- Inflated LLR^2 (Figure 1) ---
 
-plotColors <- c("dodgerblue2","orangered2")
-plotLegend <- T;  legendPos <- "bottom";  plotGrid <- T;  titleSize <- 12;  plotColors <- plotColors
-p1 <- Plot.Gene.Group(c("Act87E", "bmm"), plotTitle=expression(paste("Gene A: ", italic("Act87E"), ",  Gene B: ", italic("bmm"))), plotLegend=plotLegend, plotGrid=plotGrid, titleSize=titleSize, plotColors=plotColors)
-p2 <- Plot.Gene.Group(c("Act79B", "Mal-A7"), plotTitle=expression(paste("Gene A: ", italic("Act79B"), ",  Gene B: ", italic("Mal-A7"))), plotLegend=plotLegend, plotGrid=plotGrid, titleSize=titleSize, plotColors=plotColors)
-p3 <- Plot.Gene.Group(c("BomS3","tok"), plotTitle=expression(paste("Gene A: ", italic("BomS3"), ",  Gene B: ", italic("tok"))), plotLegend=plotLegend, plotGrid=plotGrid, titleSize=titleSize, plotColors=plotColors)
-grid.arrange(p1, p2, p3, ncol=3)
-
-# Print non-Bayes LLR2 values
-nonBayesLLR2Mat["bmm","Act87E"]
-nonBayesLLR2Mat["Mal-A7","Act79B"]
-nonBayesLLR2Mat["tok","IM3"]
 
 # --- Histograms of R^2 ---
 
@@ -327,11 +418,6 @@ h3
 # 95th quantile of this distribution = 0.2167662 (0.22)
 quantile(histData$LLR2_diff, 0.95)
 
-# --- Known and uncharacterized genes (Figure 2) ---
-
-p1 <- Plot.Gene.Group(c("per", "tim", "to", "vri", "CG11854", "CG18609", "Pdp1", "CG33511"), plotGrid=T, plotLegend=T, titleSize=12, plotTitle="Known and uncharacterized genes<br> with circadian rhythm patterns")
-p2 <- Plot.Gene.Group(c("AttC", "DptA", "DptB", "Dro", "edin", "Mtk", "CG43920", "CG44404", "CG45045"), plotGrid=T, plotLegend=T, titleSize=12, plotTitle="Known and uncharacterized genes<br> with immune response functions")
-ggsave(file="Output/CircadianAndImmunePatterns.pdf", arrangeGrob(grobs=list(p1,p2), ncol=2), width=10, height=4.5, units="in")
 
 # Also involved in immune response: "IM1", "IM14", "IM2", "IM23", "IM3", "IM33", "IM4", "IMPPP"
 
@@ -344,67 +430,6 @@ for(i in 1:length(table(subGroups))) {
   plotList[[i]] <- Plot.Gene.Group(geneNames[subGroups == i], plotTitle=paste("Cluster ", i, " (", table(subGroups)[i], " genes)", sep=""), plotColors=clusterColors[i], monochrome=monochrome, points=points, gg=gg, plotGrid=plotGrid, titleSize=titleSize)
 }
 ggsave(file="Clusters.pdf", arrangeGrob(grobs=plotList, ncol=4), width=12, height=9, units="in")
-
-# --- Selected genes in cluster 7 ---
-
-imdGenes <- c("AttA", "AttB", "AttC", "Dro", "CecA2", "DptA", "DptB", "PGRP-SB1")
-tollGenes <- c("PGRP-SA", "IMPPP", "IM1", "IM2", "IM4", "IM14", "IM23", "BomS3")
-newGenes <- c("CG44404", "CG43236", "CG43202", "CG43920")
-negativeGenes <- c("Acp1", "CG7214")
-C7colors <- c(rep(alpha("orangered2", 0.65), 8), rep(alpha("dodgerblue3", 0.65), 8), rep(alpha("black", 0.75), 4), rep(alpha("forestgreen", 0.65), 2))
-Plot.Gene.Group(c(imdGenes, tollGenes, newGenes, negativeGenes), plotColors=C7colors, plotTimes=hours[1:8],
-                plotGrid=T, plotTitle="<b>Selected genes from cluster 7</b>", titleSize=12, 
-                subtitle="(<span style='color:orangered2;'>Imd-regulated</span><span style='color:white;'> l</span><span style='color:orangered2;'>genes</span>; <span style='color:dodgerblue3;'>Toll-regulated genes</span>; <span style='color:forestgreen;'>genes that encode cuticle proteins</span>;<br><span style='color:black;'>genes potentially associated with Imd signaling</span>)")
-
-# --- Network of unknown genes in cluster 7 ---
-
-# Get the entire network
-adjBayes <- (bayesLLR2Mat > 0.9) + 0
-networkBayes <- graph_from_adjacency_matrix(adjBayes , mode='undirected', diag=F)
-
-# Get all the neighbors of the unknown genes in cluster 7
-unknownC7neighbors <- adjacent_vertices(networkBayes, newGenes)
-
-# Collapse this list of neighbors into one vector of nodes
-allNodes <- c()
-for(j in 1:length(unknownC7neighbors))
-  allNodes <- c(allNodes, names(unknownC7neighbors[j]), names(unknownC7neighbors[[j]]))
-allNodes <- unique(allNodes)
-
-# Form a new subnetwork out of allNodes
-C7adj <- (bayesLLR2Mat[allNodes, allNodes] > 0.9) + 0
-C7net <- graph_from_adjacency_matrix(C7adj , mode='undirected', diag=F)
-
-# Get a new dataframe of edges corresponding to allNodes
-C7edges <- data.frame(as_edgelist(C7net))
-colnames(C7edges) <- c("Gene1", "Gene2"); C7edges$Prior <- 0
-for(j in 1:nrow(C7edges)) {
-  prior <- priorMatrix[C7edges[j,"Gene1"], C7edges[j,"Gene2"]]
-  C7edges$Prior[j] <- prior
-}
-
-# Edges between genes with unknown associations will be blue, and edges 
-# for known associations will be red
-E(C7net)$color[is.na(C7edges$Prior)] <- alpha('blue', 0.7)
-E(C7net)$color[!is.na(C7edges$Prior)] <- alpha('red', 0.7)
-
-# The four novel genes will be colored differently
-V(C7net)$color[as_ids(V(C7net)) %in% newGenes] <- alpha("navajowhite", 0.95)
-V(C7net)$color[! as_ids(V(C7net)) %in% newGenes] <- alpha("linen", 0.85)
-
-# Node frame colors
-V(C7net)$frame.color[as_ids(V(C7net)) %in% newGenes] <- "peachpuff3"
-V(C7net)$frame.color[! as_ids(V(C7net)) %in% newGenes] <- "gray66"
-
-# Plot the new subnetwork for cluster 7 on a PDF (note: network layout is random)
-numUnknownEdges <- sum(is.na(C7edges$Prior))
-numKnownEdges <- sum(!is.na(C7edges$Prior))
-pdf("Output/Cluster7Subnetwork.pdf", height=6, width=6)
-plotTitle <- paste("New relationships detected in cluster 7\n(", length(allNodes), " genes; ", numKnownEdges, " previously-known edges, ", numUnknownEdges, " newly-identified edges)", sep="")
-plot(C7net, layout=layout_with_lgl, vertex.size=21, vertex.label.family="Helvetica",
-     vertex.label.cex=0.5, edge.width=1.2)
-title(plotTitle, cex.main=0.8, font.main=1)
-dev.off()
 
 # --- Temporal profile plot selected genes in cluster 12 ---
 
@@ -467,13 +492,7 @@ plot(fbpNet, layout=layout_with_kk, vertex.label.family="Helvetica",
 title(plotTitle, cex.main=0.8, font.main=1)
 dev.off()
 
-# --- Small-scale case study (immune response/metabolism) ---
 
-immMetGenes <- c("IM1", "IM2", "FASN1", "UGP", "mino", "fbp")
-p <- Plot.Gene.Group(immMetGenes, plotGrid=T, plotLegend=T, plotTitle="Selected genes involved in immune response<br> (<i>IM1, IM2</i>) and metabolism (<i>FASN1, UGP, mino, fbp</i>)", titleSize=12, legendPos="bottom")
-p + guides(colour=guide_legend(nrow=1))
-priorMatrix[immMetGenes, immMetGenes]
-round(bayesLLR2Mat[immMetGenes, immMetGenes], 2)
 
 # --- R^2 scatterplots ---
 

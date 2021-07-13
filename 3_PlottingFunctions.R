@@ -33,12 +33,12 @@ Expression.Profile.Interpolant <- function(geneName) {
 # - lineOpacity: opacity of plotted lines. Default 1 (opaque); decrease for transparency.
 # - legendSize: font size of legend text. Default 10.
 # - legendPos: position of legend ("top", "bottom", "left", "right"). Default "bottom". 
-# - titleSize: font size of title text. Default 15.
+# - titleSize: font size of title text. Default 12.
 # - plotTimes: length of time over which gene expression should be plotted. Default hours (full time period).
 # Output: ggplot object.
 Plot.Gene.Group <- function(genesToPlot, plotColors, plotTitle="", plotSubtitle="", points=TRUE, plotLegend=TRUE,
                             plotGrid=TRUE, lineLabels=FALSE, pointSize=1.5, lineOpacity=1, legendSize=10, legendPos="bottom",
-                            titleSize=15, plotTimes=hours) {
+                            titleSize=12, plotTimes=hours) {
 
   # Set the colors for each line if none are provided
   if(missing(plotColors)) {
