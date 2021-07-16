@@ -25,8 +25,7 @@ intLowerBound <- head(hours, -1)
 intUpperBound <- hours[-1]
 integrals <- mclapply(geneDataList, function(y) 
   c(0, mapply(Integrator, list(splinefun(x=hours, y=y, method="natural")),
-              intLowerBound, intUpperBound))
-)
+              intLowerBound, intUpperBound)))
 
 # Define matrix specifying the genes comprising each unique pair 
 # (first row = gene 1, second row = gene 2)

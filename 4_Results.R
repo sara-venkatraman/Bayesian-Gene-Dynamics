@@ -16,18 +16,19 @@ source("3_PlottingFunctions.R")
 library(gridExtra)
 
 # Read in the non-Bayesian lead-lag R^2 matrices (these matrices are only
-# used to generate Figure 9)
-nonBayesLLR2Mat <- read.csv("../Processed Data/R-Squared (Combined Genes)/NonBayesLLR2.csv", row.names=1)
-nonBayesLLR2Mat.other <- read.csv("../Processed Data/R-Squared (Combined Genes)/NonBayesLLR2_Other.csv", row.names=1)
-nonBayesLLR2Mat.own <- read.csv("../Processed Data/R-Squared (Combined Genes)/NonBayesLLR2_Own.csv", row.names=1)
+# used to generate Figure 9, and were produced by the script
+# "/Additional Scripts/LLR2Calculations_NonBayes.R")
+nonBayesLLR2Mat <- read.csv("LLR2 Matrices/NonBayesLLR2.csv", row.names=1)
+nonBayesLLR2Mat.other <- read.csv("LLR2 Matrices//NonBayesLLR2_Other.csv", row.names=1)
+nonBayesLLR2Mat.own <- read.csv("LLR2 Matrices/NonBayesLLR2_Own.csv", row.names=1)
 colnames(nonBayesLLR2Mat) <- rownames(nonBayesLLR2Mat)
 colnames(nonBayesLLR2Mat.other) <- rownames(nonBayesLLR2Mat.other)
 colnames(nonBayesLLR2Mat.own) <- rownames(nonBayesLLR2Mat.own)
 
-# Read in the Bayesian lead-lag R^2 matrices
-bayesLLR2Mat <- read.csv("../Processed Data/R-Squared (Combined Genes)/BayesLLR2.csv", row.names=1)
-bayesLLR2Mat.other <- read.csv("../Processed Data/R-Squared (Combined Genes)/BayesLLR2_Other.csv", row.names=1)
-bayesLLR2Mat.own <- read.csv("../Processed Data/R-Squared (Combined Genes)/BayesLLR2_Own.csv", row.names=1)
+# Read in the Bayesian lead-lag R^2 matrices produced by "2_LLR2Calculations.R"
+bayesLLR2Mat <- read.csv("LLR2 Matrices/BayesLLR2.csv", row.names=1)
+bayesLLR2Mat.other <- read.csv("LLR2 Matrices/BayesLLR2_Other.csv", row.names=1)
+bayesLLR2Mat.own <- read.csv("LLR2 Matrices/BayesLLR2_Own.csv", row.names=1)
 colnames(bayesLLR2Mat) <- rownames(bayesLLR2Mat)
 colnames(bayesLLR2Mat.other) <- rownames(bayesLLR2Mat.other)
 colnames(bayesLLR2Mat.own) <- rownames(bayesLLR2Mat.own)
@@ -56,13 +57,15 @@ immuneMetabolicGenes <- c("IM1", "IM2", "FASN1", "UGP", "mino", "fbp")
 p <- Plot.Gene.Group(immuneMetabolicGenes, plotTitle="Selected genes involved in immune response<br> (<i>IM1, IM2</i>) and metabolism (<i>FASN1, UGP, mino, fbp</i>)", titleSize=12) + guides(color=guide_legend(nrow=1))
 ggsave(file="ImmuneMetabolic.pdf", p, width=5.8, height=4.48, units="in")
 
-# Print corresponding section of prior adjacency matrix
+# Table 1: print corresponding section of prior adjacency matrix
 priorMatrix[immuneMetabolicGenes, immuneMetabolicGenes]
 
-# Print corresponding sections of Bayesian LLR2 and LLR2 - LLR2_own matrices
-# TODO: include code for asymmetric calculations
-round(bayesLLR2Mat[immuneMetabolicGenes, immuneMetabolicGenes], 2)
-round(bayesLLR2Mat[immuneMetabolicGenes, immuneMetabolicGenes] - bayesLLR2Mat.own[immuneMetabolicGenes, immuneMetabolicGenes], 2)
+# Find the 95th percentile of the empirical distributions of the Bayesian
+# LLR2 and LLR2 - LLR2.own values
+quantile(bayesLLR2Mat[upper.tri(bayesLLR2Mat)], 0.95)
+quantile((bayesLLR2Mat - bayesLLR2Mat.own)[upper.tri(bayesLLR2Mat)], 0.95)
+
+# For Tables 2 and 3, run the script "/Additional Scripts/LLR2Calculations_IndividualGenes.R"
 
 # --- Figure 4: Hierarchical clustering ---
 
@@ -210,7 +213,7 @@ dev.off()
 geneSubset <- sample(geneNames, size=150)
 p1 <- Draw.R2.Scatterplot(nonBayesLLR2Mat, nonBayesLLR2Mat.other, nonBayesLLR2Mat.own, priorMatrix, geneSubset, interactive=F, plotTitle=latex2exp::TeX("Non-Bayesian lead-lag $R^2$ values"))
 p2 <- Draw.R2.Scatterplot(bayesLLR2Mat, bayesLLR2Mat.other, bayesLLR2Mat.own, priorMatrix, geneSubset, interactive=F)
-ggsave(file="R2Scatterplots.pdf", arrangeGrob(grobs=list(p1,p2), ncol=2), width=10, height=4, units="in")
+ggsave(file="R2Scatterplots.pdf", arrangeGrob(grobs=list(p1,p2), ncol=2), width=10, height=4.3, units="in")
 
 # --- Figure 10: Genes in middle/upper-right region of Bayesian LLR2 scatterplot ---
 
