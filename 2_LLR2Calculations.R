@@ -4,14 +4,14 @@
 # in our paper. Approximate timing: 22 minutes for 1735 genes on a 2017 3.1
 # GHz Intel Core i5 MacBook Pro.
 
+# Start the timer for this script
+startTime <- Sys.time()
+
 # Run the script "1_DatasetLoader.R" first to load gene expression data
 source("1_DatasetLoader.R")
 
 # Load parallel computing package
 library(parallel)
-
-# Start the timer for this script
-startTime <- Sys.time()
 
 # Reshape gene expression dataframe into a list
 geneDataList <- as.list(as.data.frame(t(geneData)))

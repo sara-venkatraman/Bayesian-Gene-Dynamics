@@ -6,14 +6,16 @@
 # Approximate timing: 3.20 minutes for 1735 genes on a 2017 3.1 GHz Intel 
 # Core i5 MacBook Pro.
 
-# Run the script "1_DatasetLoader.R" first to load gene expression data
-source("1_DatasetLoader.R")
+# Start the timer for this script
+startTime <- Sys.time()
 
 # Load parallel computing package
 library(parallel)
 
-# Start the timer for this script
-startTime <- Sys.time()
+# Read the gene expression data
+geneData <- read.csv("../Data/geneData.csv", row.names=1)
+geneNames <- rownames(geneData)
+hours <- c(0, 1, 2, 4, 5, 6, 8, 10, 12, 14, 16, 20, 24, 30, 36, 42, 48)
 
 # Reshape gene expression dataframe into a list
 geneDataList <- as.list(as.data.frame(t(geneData)))
