@@ -13,9 +13,9 @@ source("2_PlottingFunctions.R")
 
 # Read gene expression data and prior adjacency matrix. Save gene names
 # and make sure row and column names of the adjacency matrix are the same.
-geneData <- read.csv("Data/geneData.csv", row.names=1)
+geneData <- read.csv("Data/GeneData.csv", row.names=1)
 geneNames <- rownames(geneData)
-priorMatrix <- read.csv("Data/priorMatrix.csv", row.names=1)
+priorMatrix <- read.csv("Data/PriorMatrix.csv", row.names=1)
 colnames(priorMatrix) <- rownames(priorMatrix)
 
 # Define hours corresponding to each time point

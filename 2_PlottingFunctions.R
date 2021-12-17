@@ -81,7 +81,7 @@ Plot.Genes <- function(geneData, timePoints, plotColors, plotTitle="",
   # Construct initial plot: smooth lines for each gene
   p <- ggplot(meltInterpData, aes(x=time, y=value, col=variable)) +
     geom_line() + scale_color_manual(values=plotColors) + theme_bw() + 
-    labs(x=axisLabels$x, y=axisLabels$y) + # "Expression (log<sub>2</sub>-fold change)", "")) +
+    labs(x=axisLabels$x, y=axisLabels$y) +
     theme(axis.title.x=element_markdown(), axis.title.y=element_markdown())
   
   # If desired, draw points of specified size at each observed time

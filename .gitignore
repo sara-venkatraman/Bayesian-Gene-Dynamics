@@ -1,6 +1,7 @@
-/Data
 /LLR2 Matrices
-/Demo
+/Demo_files
 .DS_Store
 *.pdf
+*.bib
+*.Rmd
 .Rhistory
