@@ -87,7 +87,7 @@ for(i in 1:12) {
 grid.arrange(grobs=plotList, ncol=4)
 ```
 
-![](Demo_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
+![](Images/README-cluster-plots-1.png)<!-- -->
 
 ### References
 
