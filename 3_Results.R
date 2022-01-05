@@ -1,9 +1,10 @@
 # ======= Script 3: Results (clustering and network analysis) =======
 
-# This script produces all tables and figures "An empirical Bayes approach
-# to estimating dynamic models of co-regulated gene expression" 
-# (Venkatraman et al., 2021). Figure/table numbers refer to preprint 
-# https://www.biorxiv.org/content/10.1101/2021.07.08.451684v1
+# This script produces all tables and figures in "An empirical Bayes 
+# approach to estimating dynamic models of co-regulated gene expression" 
+# (Venkatraman et al., 2021). Figure/table numbers refer to our preprint: 
+# https://arxiv.org/abs/2112.15326 or 
+# https://www.biorxiv.org/content/10.1101/2021.07.08.451684v2
 
 # ======= Setup: load gene expression data and R scripts ======= 
 
@@ -22,9 +23,9 @@ colnames(priorMatrix) <- rownames(priorMatrix)
 hours <- c(0, 1, 2, 4, 5, 6, 8, 10, 12, 14, 16, 20, 24, 30, 36, 42, 48)
 
 # ========================================================================
-# Run the LLR2 calculation functions to produce lead-lag R^2 similarity 
-# matrices *only* if they have not already been generated. Otherwise,
-# read the LLR2 matrices from CSVs using the code below.
+# Run the next two lines to produce lead-lag R^2 similarity matrices *only*
+# if they have not already been generated. Otherwise, skip to the next block
+# of code to read the LLR2 matrices from CSV files.
 bayesLLR2 <- LLR2(geneData, hours, bayes=TRUE, priorMatrix=priorMatrix, writeToCSV=TRUE)
 nonBayesLLR2 <- LLR2(geneData, hours, bayes=FALSE, writeToCSV=TRUE)
 # ========================================================================
@@ -53,7 +54,7 @@ networkNonBayes <- graph_from_adjacency_matrix(adjacencyNonBayes, mode='undirect
 edgesNonBayes <- data.frame(as_edgelist(networkNonBayes))
 colnames(edgesNonBayes) <- c("Gene1", "Gene2")
 
-# Total number of edges
+# Get total number of edges
 nrow(edgesNonBayes)
 
 # How many genes are in the largest connected component? 
@@ -75,10 +76,10 @@ edgesBayes <- data.frame(as_edgelist(networkBayes))
 colnames(edgesBayes) <- c("Gene1", "Gene2")
 edgesBayes$Prior <- apply(edgesBayes, 1, function(x) priorMatrix[x[1], x[2]])
 
-# Total number of edges
+# Get total number of edges
 nrow(edgesBayes)
 
-# Number of known, unknown, and unlikely edges, respectively
+# Get number of known, unknown, and unlikely edges, respectively
 sum(edgesBayes$Prior == 1, na.rm=TRUE)
 sum(is.na(edgesBayes$Prior))
 sum(edgesBayes$Prior == 0, na.rm=TRUE)
@@ -86,7 +87,7 @@ sum(edgesBayes$Prior == 0, na.rm=TRUE)
 # How many genes are in the largest connected component? 
 max(clusters(networkBayes, mode="strong")$csize)
 
-# Bayesian network plot; mds, kk, withgraphopt
+# Bayesian network plot
 E(networkBayes)$color[is.na(edgesBayes$Prior)] <- 'blue'
 E(networkBayes)$color[!is.na(edgesBayes$Prior)] <- 'firebrick3'
 E(networkBayes)$width[is.na(edgesBayes$Prior)] <- 0.6
@@ -138,7 +139,7 @@ p <- Plot.Genes(geneData[immMetGenes,], hours, axisLabels=list(x="Time (hours af
   guides(color=guide_legend(nrow=1))
 ggsave(file="ImmuneMetabolic.pdf", p, width=5.8, height=4.48, units="in")
 
-# ======= Tables 1-5 (4, 5 in Appendix): Immunity/metabolism case study =======
+# ======= Tables 1-5 (4 and 5 in Appendix): Immunity/metabolism case study =======
 
 immMetGenes <- c("IM1", "IM2", "FASN1", "UGP", "mino", "fbp")
 
@@ -346,6 +347,11 @@ subGroups <- cutree(hierClust, k=12)
 table(subGroups)
 
 # Plot the expression trajectories of genes in each cluster
+plotList <- list()
+plotColors <- c("darkorange3", "dodgerblue3", "forestgreen", "darkmagenta",
+                "turquoise4", "orange4", "navy", "darkgoldenrod3", 
+                "blueviolet", "red3", "olivedrab", "darkslategray", 
+                "antiquewhite4", "coral4", "goldenrod2")
 for(i in 1:length(table(subGroups))) {
   numGenes <- table(subGroups)[i]
   plotList[[i]] <- Plot.Genes(geneData[subGroups == i,], hours, points=FALSE,
@@ -451,4 +457,3 @@ p <- Plot.Genes(geneData[c(mannosidases, maltases, hemocytes), 1:11], hours[1:11
                 plotSubtitle="(genes involved in carbohydrate metabolism: <span style='color:firebrick3;'>mannosidases</span>; <span style='color:goldenrod3';>maltases</span>;<br>genes involved in phagocytosis: <span style='color:blue3;'>Nimrod family</span>; <span style='color:purple;'><i>Hml</i></span>; <span style='color:seagreen3;'><i>Gs1</i></span>)",
                 axisLabels=list(x="Time (hours after infection)", y="Expression (log<sub>2</sub>-fold change)"))
 ggsave(file="Cluster6.pdf", p, width=6, height=4.5, units="in")
-
