@@ -5,8 +5,7 @@ The code in this repository implements the Bayesian lead-lag
 *R*<sup>2</sup> (LLR2) algorithm introduced in Venkatraman et al. (2021)
 for biologically-informed clustering and network analysis of time-course
 gene expression data. For details of how it works, see Section 3 of our
-[paper](https://www.biorxiv.org/content/10.1101/2021.07.08.451684v1).
-Below is a short demo.
+[paper](http://arxiv.org/abs/2112.15326). Below is a short demo.
 
 This repository consists of the following R files:
 
